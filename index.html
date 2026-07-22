@@ -1,1 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
+  <title>Cell Visualization Explorer</title>
+
+  <link rel="stylesheet" href="style.css" />
+
+  <script
+    async
+    src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"
+  ></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <main class="app">
+    <aside class="sidebar">
+      <p class="eyebrow">Interactive biology</p>
+
+      <h1>Cell Visualization Explorer</h1>
+
+      <p class="intro">
+        Explore the structures of a eukaryotic cell and learn
+        how each organelle contributes to cellular function.
+      </p>
+
+      <div class="organelle-list">
+        <button class="organelle-button active" data-organelle="cell">
+          Whole cell
+        </button>
+
+        <button class="organelle-button" data-organelle="nucleus">
+          Nucleus
+        </button>
+
+        <button class="organelle-button" data-organelle="mitochondrion">
+          Mitochondrion
+        </button>
+      </div>
+    </aside>
+
+    <section class="viewer">
+      <div id="cell-canvas"></div>
+
+      <div class="viewer-hint">
+        Drag to rotate · Scroll to zoom
+      </div>
+    </section>
+
+    <aside class="info-panel">
+      <p class="info-panel__label">Selected structure</p>
+
+      <h2 id="organelle-name">Whole cell</h2>
+
+      <p id="organelle-description">
+        A simplified three-dimensional model of a eukaryotic
+        cell. Select an organelle to learn more.
+      </p>
+
+      <dl class="facts">
+        <div>
+          <dt>Main role</dt>
+          <dd id="organelle-role">Cellular organization</dd>
+        </div>
+
+        <div>
+          <dt>Location</dt>
+          <dd id="organelle-location">Entire cell</dd>
+        </div>
+      </dl>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
