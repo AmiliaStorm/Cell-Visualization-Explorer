@@ -356,7 +356,81 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
+/* ==================================================
+   Clickable organelles
+   ================================================== */
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+
+const clickableObjects = [
+  nucleus,
+  ...cellGroup.children.filter(
+    (object) => object.userData.type === "mitochondrion"
+  ),
+];
+
+nucleus.userData.type = "nucleus";
+
+function selectOrganelle(organelleKey) {
+  updateInfo(organelleKey);
+
+  if (organelleKey === "nucleus") {
+    controls.target.copy(nucleus.position);
+    camera.position.set(0, 0, 5.2);
+  } else if (organelleKey === "mitochondrion") {
+    controls.target.set(1.1, 0.1, 0);
+    camera.position.set(1.5, 0.5, 5.5);
+  } else {
+    controls.target.set(0, 0, 0);
+    camera.position.set(0, 0, 9);
+  }
+
+  controls.update();
+}
+
+renderer.domElement.addEventListener("click", (event) => {
+  const rectangle =
+    renderer.domElement.getBoundingClientRect();
+
+  pointer.x =
+    ((event.clientX - rectangle.left) /
+      rectangle.width) *
+      2 -
+    1;
+
+  pointer.y =
+    -(
+      (event.clientY - rectangle.top) /
+      rectangle.height
+    ) *
+      2 +
+    1;
+
+  raycaster.setFromCamera(pointer, camera);
+
+  const intersections =
+    raycaster.intersectObjects(
+      clickableObjects,
+      true
+    );
+
+  if (intersections.length === 0) {
+    return;
+  }
+
+  const selectedObject = intersections[0].object;
+  const organelleType =
+    selectedObject.userData.type ||
+    selectedObject.parent?.userData.type;
+
+  if (organelleType) {
+    selectOrganelle(organelleType);
+  }
+});
+
 animate();
+
 
 /* Resize */
 
