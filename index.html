@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   />
 
-  <title>Cell Visualization Explorer</title>
+  <meta
+    name="description"
+    content="An interactive visualization of eukaryotic cell structures and cellular processes."
+  />
+
+  <title>Cell Function Explorer</title>
 
   <link rel="stylesheet" href="style.css" />
 
@@ -27,64 +33,537 @@
 </head>
 
 <body>
-  <main class="app">
-    <aside class="sidebar">
-      <p class="eyebrow">Interactive biology</p>
+  <main class="explorer-app">
 
-      <h1>Cell Visualization Explorer</h1>
+    <!-- =====================================================
+         Left navigation
+    ====================================================== -->
 
-      <p class="intro">
-        <!-- Sidebar description -->
-        
-        Explore the structures of a eukaryotic cell and learn   
-        how each organelle contributes to cellular function.
-      </p>
+    <aside class="left-sidebar">
+      <header class="brand">
+        <div class="brand__icon">
+          <span class="brand__orbit"></span>
+          <span class="brand__nucleus"></span>
+        </div>
 
-      <div class="organelle-list">
-        <button class="organelle-button active" data-organelle="cell">
-          Whole cell
+        <div>
+          <strong>Cell Function Explorer</strong>
+          <span>Interactive Visualization</span>
+        </div>
+      </header>
+
+      <nav class="main-navigation" aria-label="Explorer sections">
+        <button
+          class="navigation-item"
+          data-view="overview"
+          type="button"
+        >
+          <span class="navigation-item__icon">⌂</span>
+          <span>Overview</span>
         </button>
 
-        <button class="organelle-button" data-organelle="nucleus">
-          Nucleus
+        <button
+          class="navigation-item active"
+          data-view="protein-production"
+          type="button"
+        >
+          <span class="navigation-item__icon">⌘</span>
+          <span>Protein Production</span>
+          <span class="navigation-item__arrow">›</span>
         </button>
 
-        <button class="organelle-button" data-organelle="mitochondrion">
-          Mitochondrion
+        <button
+          class="navigation-item"
+          data-view="organelles"
+          type="button"
+        >
+          <span class="navigation-item__icon">◉</span>
+          <span>Organelles</span>
         </button>
-      </div>
+
+        <button
+          class="navigation-item"
+          data-view="cytoskeleton"
+          type="button"
+        >
+          <span class="navigation-item__icon">⌁</span>
+          <span>Cytoskeleton</span>
+        </button>
+
+        <button
+          class="navigation-item"
+          data-view="transport"
+          type="button"
+        >
+          <span class="navigation-item__icon">◇</span>
+          <span>Transport</span>
+        </button>
+
+        <button
+          class="navigation-item"
+          data-view="membrane"
+          type="button"
+        >
+          <span class="navigation-item__icon">⬡</span>
+          <span>Cell Membrane</span>
+        </button>
+
+        <button
+          class="navigation-item"
+          data-view="quizzes"
+          type="button"
+        >
+          <span class="navigation-item__icon">♡</span>
+          <span>Quizzes</span>
+        </button>
+      </nav>
+
+      <section class="cell-status">
+        <p class="sidebar-heading">Cell status</p>
+
+        <div class="status-item">
+          <div class="status-item__heading">
+            <span>▯</span>
+            <span>Energy</span>
+            <strong>82%</strong>
+          </div>
+
+          <div class="status-bar">
+            <span style="width: 82%"></span>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-item__heading">
+            <span>ϟ</span>
+            <span>ATP</span>
+            <strong>76%</strong>
+          </div>
+
+          <div class="status-bar status-bar--green">
+            <span style="width: 76%"></span>
+          </div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-item__heading">
+            <span>♡</span>
+            <span>Health</span>
+            <strong>92%</strong>
+          </div>
+
+          <div class="status-bar status-bar--pink">
+            <span style="width: 92%"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="cell-type-card">
+        <div class="cell-type-card__preview">
+          <div class="mini-cell">
+            <span></span>
+          </div>
+        </div>
+
+        <div class="cell-type-card__content">
+          <strong>Animal Cell</strong>
+          <span>Eukaryotic</span>
+
+          <button type="button">
+            Change Cell Type
+            <span>→</span>
+          </button>
+        </div>
+      </section>
     </aside>
 
-    <section class="viewer">
-      <div id="cell-canvas"></div>
+    <!-- =====================================================
+         Main visualization
+    ====================================================== -->
 
-      <div class="viewer-hint">
-        Drag to rotate · Scroll to zoom
+    <section class="visualization-area">
+      <header class="visualization-header">
+        <div>
+          <h1>Eukaryotic Animal Cell</h1>
+
+          <p>
+            Explore the protein production pathway
+            <button
+              class="information-button"
+              type="button"
+              aria-label="Show information"
+            >
+              i
+            </button>
+          </p>
+        </div>
+
+        <div class="view-controls">
+          <button
+            class="view-control active"
+            type="button"
+            data-control="3d"
+          >
+            <span>⬡</span>
+            <small>3D</small>
+          </button>
+
+          <button
+            class="view-control"
+            type="button"
+            data-control="labels"
+          >
+            <span>▱</span>
+            <small>Labels</small>
+          </button>
+
+          <button
+            class="view-control"
+            type="button"
+            data-control="cutaway"
+          >
+            <span>⬢</span>
+            <small>Cutaway</small>
+          </button>
+
+          <button
+            class="fullscreen-button"
+            type="button"
+            aria-label="Toggle fullscreen"
+          >
+            ⛶
+          </button>
+        </div>
+      </header>
+
+      <div class="viewer">
+        <div id="cell-canvas"></div>
+
+        <!-- Pathway labels -->
+
+        <button
+          class="pathway-label pathway-label--dna"
+          data-step="0"
+          type="button"
+        >
+          <span>1</span>
+
+          <div>
+            <strong>DNA</strong>
+            <small>Nucleus</small>
+          </div>
+        </button>
+
+        <button
+          class="pathway-label pathway-label--mrna"
+          data-step="1"
+          type="button"
+        >
+          <span>2</span>
+
+          <div>
+            <strong>mRNA</strong>
+            <small>Exits nucleus</small>
+          </div>
+        </button>
+
+        <button
+          class="pathway-label pathway-label--translation"
+          data-step="2"
+          type="button"
+        >
+          <span>3</span>
+
+          <div>
+            <strong>Translation</strong>
+            <small>Ribosome on RER</small>
+          </div>
+        </button>
+
+        <button
+          class="pathway-label pathway-label--vesicle"
+          data-step="3"
+          type="button"
+        >
+          <span>4</span>
+
+          <div>
+            <strong>Transport Vesicle</strong>
+            <small>Protein in vesicle</small>
+          </div>
+        </button>
+
+        <button
+          class="pathway-label pathway-label--golgi"
+          data-step="4"
+          type="button"
+        >
+          <span>5</span>
+
+          <div>
+            <strong>Golgi Apparatus</strong>
+            <small>Modifies and packages</small>
+          </div>
+        </button>
+
+        <button
+          class="pathway-label pathway-label--secretion"
+          data-step="5"
+          type="button"
+        >
+          <span>6</span>
+
+          <div>
+            <strong>Secretion</strong>
+            <small>Protein released</small>
+          </div>
+        </button>
+
+        <div class="viewer-hint">
+          Drag to rotate · Scroll to zoom
+        </div>
       </div>
     </section>
 
-    <aside class="info-panel">
-      <p class="info-panel__label">Selected structure</p>
+    <!-- =====================================================
+         Right pathway panel
+    ====================================================== -->
 
-      <h2 id="organelle-name">Whole cell</h2>
+    <aside class="right-sidebar">
+      <header class="pathway-panel__header">
+        <p>Protein production pathway</p>
+        <span>Follow the 6 essential steps</span>
+      </header>
 
-      <p id="organelle-description">
-        A simplified three-dimensional model of a eukaryotic
-        cell. Select an organelle to learn more.
-      </p>
+      <ol class="pathway-steps">
+        <li class="pathway-step active" data-step="0">
+          <button type="button">
+            <span class="pathway-step__number">1</span>
 
-      <dl class="facts">
-        <div>
-          <dt>Main role</dt>
-          <dd id="organelle-role">Cellular organization</dd>
-        </div>
+            <span class="pathway-step__content">
+              <strong>DNA</strong>
+              <small>
+                The blueprint for proteins is stored in DNA
+                inside the nucleus.
+              </small>
+            </span>
+          </button>
+        </li>
 
-        <div>
-          <dt>Location</dt>
-          <dd id="organelle-location">Entire cell</dd>
-        </div>
-      </dl>
+        <li class="pathway-step" data-step="1">
+          <button type="button">
+            <span class="pathway-step__number">2</span>
+
+            <span class="pathway-step__content">
+              <strong>mRNA</strong>
+              <small>
+                DNA is transcribed into messenger RNA, which
+                exits through a nuclear pore.
+              </small>
+            </span>
+          </button>
+        </li>
+
+        <li class="pathway-step" data-step="2">
+          <button type="button">
+            <span class="pathway-step__number">3</span>
+
+            <span class="pathway-step__content">
+              <strong>Translation</strong>
+              <small>
+                Ribosomes read the mRNA sequence and assemble
+                amino acids into a protein.
+              </small>
+            </span>
+          </button>
+        </li>
+
+        <li class="pathway-step" data-step="3">
+          <button type="button">
+            <span class="pathway-step__number">4</span>
+
+            <span class="pathway-step__content">
+              <strong>Transport Vesicle</strong>
+              <small>
+                The newly produced protein is packaged into a
+                vesicle for transport.
+              </small>
+            </span>
+          </button>
+        </li>
+
+        <li class="pathway-step" data-step="4">
+          <button type="button">
+            <span class="pathway-step__number">5</span>
+
+            <span class="pathway-step__content">
+              <strong>Golgi Apparatus</strong>
+              <small>
+                The Golgi modifies, sorts and packages the
+                protein for its destination.
+              </small>
+            </span>
+          </button>
+        </li>
+
+        <li class="pathway-step" data-step="5">
+          <button type="button">
+            <span class="pathway-step__number">6</span>
+
+            <span class="pathway-step__content">
+              <strong>Secretion</strong>
+              <small>
+                A vesicle fuses with the cell membrane and
+                releases the protein.
+              </small>
+            </span>
+          </button>
+        </li>
+      </ol>
+
+      <button
+        id="start-simulation"
+        class="start-simulation-button"
+        type="button"
+      >
+        <span>▶</span>
+        Start Protein Production
+      </button>
     </aside>
+
+    <!-- =====================================================
+         Bottom simulation timeline
+    ====================================================== -->
+
+    <section class="simulation-panel">
+      <header class="simulation-panel__header">
+        <p>Simulation timeline</p>
+      </header>
+
+      <div class="timeline">
+        <div class="timeline__track">
+          <div id="timeline-progress" class="timeline__progress"></div>
+        </div>
+
+        <button class="timeline-step active" data-step="0" type="button">
+          <span>1</span>
+          <strong>DNA</strong>
+          <small>00:00</small>
+        </button>
+
+        <button class="timeline-step" data-step="1" type="button">
+          <span>2</span>
+          <strong>mRNA</strong>
+          <small>00:04</small>
+        </button>
+
+        <button class="timeline-step" data-step="2" type="button">
+          <span>3</span>
+          <strong>Translation</strong>
+          <small>00:10</small>
+        </button>
+
+        <button class="timeline-step" data-step="3" type="button">
+          <span>4</span>
+          <strong>Vesicle Transport</strong>
+          <small>00:18</small>
+        </button>
+
+        <button class="timeline-step" data-step="4" type="button">
+          <span>5</span>
+          <strong>Golgi Processing</strong>
+          <small>00:26</small>
+        </button>
+
+        <button class="timeline-step" data-step="5" type="button">
+          <span>6</span>
+          <strong>Secretion</strong>
+          <small>00:34</small>
+        </button>
+      </div>
+
+      <footer class="simulation-controls">
+        <div class="simulation-controls__playback">
+          <button id="previous-step" type="button" aria-label="Previous step">
+            |◀
+          </button>
+
+          <button
+            id="play-pause"
+            class="play-button"
+            type="button"
+            aria-label="Play simulation"
+          >
+            ▶
+          </button>
+
+          <button id="next-step" type="button" aria-label="Next step">
+            ▶|
+          </button>
+        </div>
+
+        <div class="simulation-controls__settings">
+          <button type="button">
+            <strong>1.0x</strong>
+            <small>Speed</small>
+          </button>
+
+          <button id="pause-simulation" type="button">
+            Ⅱ Pause
+          </button>
+        </div>
+
+        <div class="simulation-controls__tools">
+          <button type="button">
+            <span>▣</span>
+            <small>Screenshot</small>
+          </button>
+
+          <button type="button">
+            <span>▤</span>
+            <small>Notes</small>
+          </button>
+
+          <button type="button">
+            <span>⌯</span>
+            <small>Share</small>
+          </button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Hidden compatibility elements for current cell.js -->
+
+    <div class="compatibility-elements" hidden>
+      <button
+        class="organelle-button"
+        data-organelle="cell"
+        type="button"
+      >
+        Whole cell
+      </button>
+
+      <button
+        class="organelle-button"
+        data-organelle="nucleus"
+        type="button"
+      >
+        Nucleus
+      </button>
+
+      <button
+        class="organelle-button"
+        data-organelle="mitochondrion"
+        type="button"
+      >
+        Mitochondrion
+      </button>
+
+      <span id="organelle-name"></span>
+      <span id="organelle-description"></span>
+      <span id="organelle-role"></span>
+      <span id="organelle-location"></span>
+    </div>
   </main>
 
   <script type="module" src="cell.js"></script>
