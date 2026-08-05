@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Cell Function Explorer</title>
+
+  <link
+    rel="stylesheet"
+    href="./style.css"
+  />
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+
+<body>
+  <!-- Three.js scene -->
+  <div id="cell-canvas"></div>
+
+  <!-- Entire application interface -->
+  <div class="app-shell">
+
+    <!-- ================= LEFT SIDEBAR ================= -->
+
+    <aside class="left-sidebar glass-panel">
+      <header class="brand">
+        <div class="brand__icon">
+          <span>⚛</span>
+        </div>
+
+        <div>
+          <h1>Cell Function Explorer</h1>
+          <p>Interactive Visualization</p>
+        </div>
+      </header>
+
+      <nav class="main-navigation">
+        <button
+          class="nav-item"
+          data-section="overview"
+          type="button"
+        >
+          <span class="nav-item__icon">⌂</span>
+          <span>Overview</span>
+        </button>
+
+        <button
+          class="nav-item active"
+          data-section="protein-production"
+          type="button"
+        >
+          <span class="nav-item__icon">🧬</span>
+          <span>Protein Production</span>
+          <span class="nav-item__arrow">›</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-section="organelles"
+          type="button"
+        >
+          <span class="nav-item__icon">◉</span>
+          <span>Organelles</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-section="cytoskeleton"
+          type="button"
+        >
+          <span class="nav-item__icon">⌘</span>
+          <span>Cytoskeleton</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-section="transport"
+          type="button"
+        >
+          <span class="nav-item__icon">⇄</span>
+          <span>Transport</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-section="membrane"
+          type="button"
+        >
+          <span class="nav-item__icon">⬡</span>
+          <span>Cell Membrane</span>
+        </button>
+
+        <button
+          class="nav-item"
+          data-section="quizzes"
+          type="button"
+        >
+          <span class="nav-item__icon">✓</span>
+          <span>Quizzes</span>
+        </button>
+      </nav>
+
+      <section class="cell-status">
+        <p class="section-label">CELL STATUS</p>
+
+        <div class="status-row">
+          <div class="status-row__header">
+            <span>⚡ Energy</span>
+            <span>82%</span>
+          </div>
+
+          <div class="status-track">
+            <div
+              class="status-fill"
+              style="width: 82%"
+            ></div>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-row__header">
+            <span>✦ ATP</span>
+            <span>76%</span>
+          </div>
+
+          <div class="status-track">
+            <div
+              class="status-fill status-fill--green"
+              style="width: 76%"
+            ></div>
+          </div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-row__header">
+            <span>♡ Health</span>
+            <span>92%</span>
+          </div>
+
+          <div class="status-track">
+            <div
+              class="status-fill status-fill--purple"
+              style="width: 92%"
+            ></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cell-type-card">
+        <div class="cell-type-card__preview">
+          🦠
+        </div>
+
+        <div>
+          <strong>Animal Cell</strong>
+          <span>Eukaryotic</span>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Change cell type"
+        >
+          ›
+        </button>
+      </section>
+    </aside>
+
+    <!-- ================= TOP HEADER ================= -->
+
+    <header class="scene-header">
+      <div>
+        <h2>Eukaryotic Animal Cell</h2>
+        <p>
+          Explore the protein production pathway
+        </p>
+      </div>
+
+      <div class="view-controls glass-panel">
+        <button
+          class="view-button active"
+          type="button"
+        >
+          <span>⬡</span>
+          3D
+        </button>
+
+        <button
+          class="view-button"
+          type="button"
+        >
+          <span>▢</span>
+          Labels
+        </button>
+
+        <button
+          class="view-button"
+          type="button"
+        >
+          <span>◫</span>
+          Cutaway
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= CURRENT STAGE LABEL ================= -->
+
+    <section
+      id="active-stage-card"
+      class="active-stage-card glass-panel"
+    >
+      <span
+        id="active-stage-number"
+        class="active-stage-card__number"
+      >
+        1
+      </span>
+
+      <div>
+        <strong id="active-stage-title">
+          DNA
+        </strong>
+
+        <span id="active-stage-location">
+          Nucleus
+        </span>
+      </div>
+    </section>
+
+    <!-- ================= RIGHT SIDEBAR ================= -->
+
+    <aside class="right-sidebar glass-panel">
+      <header class="pathway-header">
+        <p>PROTEIN PRODUCTION PATHWAY</p>
+        <span>Follow the 6 essential steps</span>
+      </header>
+
+      <div id="pathway-stage-list">
+
+        <button
+          class="pathway-stage active"
+          data-stage-id="dna"
+          data-stage-time="0"
+          type="button"
+        >
+          <span class="pathway-stage__number">1</span>
+
+          <span class="pathway-stage__content">
+            <strong>DNA</strong>
+
+            <small>
+              The blueprint for proteins is stored
+              as DNA inside the nucleus.
+            </small>
+          </span>
+        </button>
+
+        <button
+          class="pathway-stage"
+          data-stage-id="mrna"
+          data-stage-time="4"
+          type="button"
+        >
+          <span class="pathway-stage__number">2</span>
+
+          <span class="pathway-stage__content">
+            <strong>mRNA</strong>
+
+            <small>
+              mRNA is transcribed from DNA and
+              exits through a nuclear pore.
+            </small>
+          </span>
+        </button>
+
+        <button
+          class="pathway-stage"
+          data-stage-id="translation"
+          data-stage-time="10"
+          type="button"
+        >
+          <span class="pathway-stage__number">3</span>
+
+          <span class="pathway-stage__content">
+            <strong>Translation</strong>
+
+            <small>
+              Ribosomes read mRNA and assemble
+              amino acids into a protein.
+            </small>
+          </span>
+        </button>
+
+        <button
+          class="pathway-stage"
+          data-stage-id="transport"
+          data-stage-time="18"
+          type="button"
+        >
+          <span class="pathway-stage__number">4</span>
+
+          <span class="pathway-stage__content">
+            <strong>Transport Vesicle</strong>
+
+            <small>
+              The protein is packaged inside a
+              vesicle for transport.
+            </small>
+          </span>
+        </button>
+
+        <button
+          class="pathway-stage"
+          data-stage-id="golgi"
+          data-stage-time="26"
+          type="button"
+        >
+          <span class="pathway-stage__number">5</span>
+
+          <span class="pathway-stage__content">
+            <strong>Golgi Apparatus</strong>
+
+            <small>
+              The Golgi modifies, sorts, and
+              packages the protein.
+            </small>
+          </span>
+        </button>
+
+        <button
+          class="pathway-stage"
+          data-stage-id="secretion"
+          data-stage-time="34"
+          type="button"
+        >
+          <span class="pathway-stage__number">6</span>
+
+          <span class="pathway-stage__content">
+            <strong>Secretion</strong>
+
+            <small>
+              A vesicle fuses with the membrane
+              and releases the protein.
+            </small>
+          </span>
+        </button>
+      </div>
+
+      <button
+        id="start-simulation-button"
+        class="primary-action"
+        type="button"
+      >
+        <span>▶</span>
+        Start Protein Production
+      </button>
+    </aside>
+
+    <!-- ================= BOTTOM TIMELINE ================= -->
+
+    <section class="timeline-panel glass-panel">
+      <header class="timeline-panel__header">
+        <span>SIMULATION TIMELINE</span>
+
+        <span id="timeline-time">
+          00:00 / 00:42
+        </span>
+      </header>
+
+      <div class="timeline-stages">
+        <button
+          class="timeline-stage active"
+          data-stage-id="dna"
+          data-stage-time="0"
+          type="button"
+        >
+          <span>1</span>
+          <strong>DNA</strong>
+          <small>00:00</small>
+        </button>
+
+        <button
+          class="timeline-stage"
+          data-stage-id="mrna"
+          data-stage-time="4"
+          type="button"
+        >
+          <span>2</span>
+          <strong>mRNA</strong>
+          <small>00:04</small>
+        </button>
+
+        <button
+          class="timeline-stage"
+          data-stage-id="translation"
+          data-stage-time="10"
+          type="button"
+        >
+          <span>3</span>
+          <strong>Translation</strong>
+          <small>00:10</small>
+        </button>
+
+        <button
+          class="timeline-stage"
+          data-stage-id="transport"
+          data-stage-time="18"
+          type="button"
+        >
+          <span>4</span>
+          <strong>Vesicle Transport</strong>
+          <small>00:18</small>
+        </button>
+
+        <button
+          class="timeline-stage"
+          data-stage-id="golgi"
+          data-stage-time="26"
+          type="button"
+        >
+          <span>5</span>
+          <strong>Golgi Processing</strong>
+          <small>00:26</small>
+        </button>
+
+        <button
+          class="timeline-stage"
+          data-stage-id="secretion"
+          data-stage-time="34"
+          type="button"
+        >
+          <span>6</span>
+          <strong>Secretion</strong>
+          <small>00:34</small>
+        </button>
+      </div>
+
+      <div class="timeline-track">
+        <div
+          id="timeline-progress"
+          class="timeline-progress"
+        ></div>
+
+        <input
+          id="timeline-slider"
+          type="range"
+          min="0"
+          max="42"
+          step="0.01"
+          value="0"
+          aria-label="Simulation timeline"
+        />
+      </div>
+
+      <footer class="playback-controls">
+        <button
+          id="restart-button"
+          class="control-button"
+          type="button"
+          aria-label="Restart simulation"
+        >
+          ↺
+        </button>
+
+        <button
+          id="play-pause-button"
+          class="play-button"
+          type="button"
+          aria-label="Play simulation"
+        >
+          ▶
+        </button>
+
+        <select
+          id="speed-select"
+          class="speed-select"
+          aria-label="Playback speed"
+        >
+          <option value="0.5">0.5×</option>
+          <option value="1" selected>1.0×</option>
+          <option value="2">2.0×</option>
+        </select>
+
+        <div class="timeline-stage-description">
+          <strong id="timeline-stage-title">
+            DNA
+          </strong>
+
+          <span id="timeline-stage-description">
+            Protein instructions are stored in DNA.
+          </span>
+        </div>
+      </footer>
+    </section>
+  </div>
+
+  <script
+    type="module"
+    src="./js/main.js"
+  ></script>
+</body>
+</html>

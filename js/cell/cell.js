@@ -1,0 +1,402 @@
+import * as THREE from "three";
+
+import {
+  createMembrane,
+} from "./membrane.js";
+
+import {
+  createCytoplasm,
+} from "./cytoplasm.js";
+
+import {
+  createNucleus,
+} from "./nucleus.js";
+
+import {
+  createMitochondria,
+} from "./mitochondria.js";
+
+import {
+  createRibosomes,
+} from "./ribosomes.js";
+
+import {
+  createCytoskeleton,
+} from "./cytoskeleton.js";
+
+import {
+  createRoughER,
+} from "./roughER.js";
+
+import {
+  createSmoothER,
+} from "./smoothER.js";
+
+import {
+  createGolgi,
+} from "./golgi.js";
+
+import {
+  cellLayout,
+} from "./layout.js";
+
+import {
+  createCytoplasmParticles,
+} from "./cytoplasmParticles.js";
+
+import {
+  createLysosomes,
+} from "./lysosomes.js";
+
+/* ==========================================================
+   Build complete animal cell
+   ========================================================== */
+
+export function buildCell(scene) {
+  const group =
+    new THREE.Group();
+
+  group.name =
+    "animalCell";
+
+  /*
+   * The membrane, cytoplasm and cytoskeleton remain
+   * at full-cell scale.
+   *
+   * Major organelles and the protein-production pathway
+   * are placed inside contentGroup.
+   */
+  const contentGroup =
+    new THREE.Group();
+
+  contentGroup.name =
+    "cellContent";
+
+  contentGroup.scale.setScalar(
+    1.3
+  );
+
+  group.scale.setScalar(
+    0.78
+  );
+
+  group.position.set(
+    0,
+    0,
+    0
+  );
+
+  group.rotation.set(
+    -0.03,
+    0.07,
+    0
+  );
+
+  /* ========================================================
+     Create structures
+     ======================================================== */
+
+  const membrane =
+    createMembrane();
+
+  const cytoplasm =
+    createCytoplasm();
+
+  const nucleus =
+    createNucleus();
+
+  const roughER =
+    createRoughER();
+
+  const smoothER =
+    createSmoothER();
+
+  const golgi =
+    createGolgi();
+
+  const mitochondria =
+    createMitochondria();
+
+  const ribosomes =
+    createRibosomes();
+
+  const cytoskeleton =
+    createCytoskeleton();
+
+  const cytoplasmParticles =
+    createCytoplasmParticles({
+      proteinCount: 280,
+      cellRadius: 3.05,
+      nucleusRadius: 1.18,
+      edgePadding: 0.2,
+    });
+
+  const lysosomes =
+  createLysosomes();
+
+  /* ========================================================
+     Nucleus layout
+     ======================================================== */
+
+  nucleus.group.position.copy(
+    cellLayout.nucleus.position
+  );
+
+  nucleus.group.scale.copy(
+    cellLayout.nucleus.scale
+  );
+
+  /* ========================================================
+     Rough ER layout
+     ======================================================== */
+
+  roughER.group.position.copy(
+    cellLayout.roughER.position
+  );
+
+  roughER.group.rotation.copy(
+    cellLayout.roughER.rotation
+  );
+
+  roughER.group.scale.copy(
+    cellLayout.roughER.scale
+  );
+
+  /* ========================================================
+     Smooth ER layout
+     ======================================================== */
+
+  smoothER.group.position.copy(
+    cellLayout.smoothER.position
+  );
+
+  smoothER.group.rotation.copy(
+    cellLayout.smoothER.rotation
+  );
+
+  smoothER.group.scale.copy(
+    cellLayout.smoothER.scale
+  );
+
+  /* ========================================================
+     Golgi layout
+     ======================================================== */
+
+  golgi.group.position.copy(
+    cellLayout.golgi.position
+  );
+
+  golgi.group.rotation.copy(
+    cellLayout.golgi.rotation
+  );
+
+  golgi.group.scale.copy(
+    cellLayout.golgi.scale
+  );
+
+  /* ========================================================
+     Mitochondrial layout
+     ======================================================== */
+
+  mitochondria.forEach(
+    (
+      mitochondrion,
+      index
+    ) => {
+      const layout =
+        cellLayout
+          .mitochondria[
+            index
+          ];
+
+      if (!layout) {
+        return;
+      }
+
+      mitochondrion.position.copy(
+        layout.position
+      );
+
+      mitochondrion.rotation.copy(
+        layout.rotation
+      );
+
+      mitochondrion.scale.setScalar(
+        layout.scale
+      );
+
+      /*
+       * Used by mitochondria.js so its breathing
+       * animation preserves the layout scale.
+       */
+      mitochondrion.userData
+        .layoutScale =
+        layout.scale;
+    }
+  );
+
+   /* ========================================================
+     Lysosome layout
+     ======================================================== */
+
+  lysosomes.forEach(
+  (
+    lysosome,
+    index
+  ) => {
+    const layout =
+      cellLayout.lysosomes[
+        index
+      ];
+
+    if (!layout) {
+      return;
+    }
+
+    lysosome.position.copy(
+      layout.position
+    );
+
+    lysosome.rotation.copy(
+      layout.rotation
+    );
+
+    lysosome.scale.setScalar(
+      layout.scale
+    );
+
+    /*
+     * Preserves the configured scale during
+     * the breathing animation in lysosomes.js.
+     */
+    lysosome.userData.layoutScale =
+      layout.scale;
+  }
+);
+
+  /* ========================================================
+     Assemble major organelles
+     ======================================================== */
+
+  contentGroup.add(
+    roughER.group,
+    smoothER.group,
+    nucleus.group,
+    golgi.group,
+    ribosomes,
+    ...mitochondria,
+    ... lysosomes
+  );
+
+  /* ========================================================
+     Assemble complete cell
+     ======================================================== */
+
+  group.add(
+    cytoplasm,
+    cytoplasmParticles.group,
+    cytoskeleton.group,
+    contentGroup,
+    membrane
+  );
+
+  scene.add(
+    group
+  );
+
+  /* ========================================================
+     Public cell object
+     ======================================================== */
+
+  return {
+    group,
+    contentGroup,
+
+    membrane,
+    cytoplasm,
+    cytoplasmParticles,
+
+    nucleus,
+    roughER,
+    smoothER,
+    golgi,
+
+    mitochondria,
+    ribosomes,
+    cytoskeleton,
+    lysosomes,
+
+    /* ======================================================
+       Animation
+       ====================================================== */
+
+    animate(
+      elapsedTime,
+      deltaTime = 1 / 60
+    ) {
+      nucleus.animate(
+        elapsedTime
+      );
+
+      cytoskeleton.animate(
+        elapsedTime
+      );
+
+      roughER.animate(
+        elapsedTime
+      );
+
+      smoothER.animate(
+        elapsedTime,
+        deltaTime
+      );
+
+      mitochondria.animate(
+        elapsedTime
+      );
+
+      golgi.animate(
+        elapsedTime
+      );
+
+      cytoplasmParticles.animate(
+        elapsedTime,
+        deltaTime
+      );
+
+      lysosomes.animate(
+      elapsedTime
+      );
+
+      /*
+       * Gentle plasma-membrane breathing.
+       */
+      const membranePulse =
+        1 +
+        Math.sin(
+          elapsedTime * 0.55
+        ) *
+          0.006;
+
+      membrane.scale.set(
+        membrane.userData
+          .baseScale.x *
+          membranePulse,
+
+        membrane.userData
+          .baseScale.y *
+          (
+            1 +
+            Math.cos(
+              elapsedTime * 0.55
+            ) *
+              0.005
+          ),
+
+        membrane.userData
+          .baseScale.z *
+          membranePulse
+      );
+    },
+  };
+}
