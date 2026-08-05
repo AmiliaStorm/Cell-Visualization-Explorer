@@ -34,7 +34,7 @@ import {
 
 import {
   createOrganelleInteraction,
-} from "./ui/organelleInteraction.js";
+} from "./ui/OrganelleInteraction.js";
 
 /* ==========================================================
    Canvas container
