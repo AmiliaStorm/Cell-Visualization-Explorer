@@ -177,10 +177,12 @@ export function createSmoothER() {
     clearcoat: 0.55,
     clearcoatRoughness: 0.22,
 
-    emissive: 0x07475a,
-    emissiveIntensity: 0.38,
+    emissive: 0x0d6f8a,
+    emissiveIntensity: 0.62,
 
     side: THREE.DoubleSide,
+
+    depthWrite: true,
   });
 
   const junctionMaterial =
@@ -196,8 +198,8 @@ export function createSmoothER() {
     clearcoat: 0.58,
     clearcoatRoughness: 0.2,
 
-    emissive: 0x09566b,
-    emissiveIntensity: 0.42,
+    emissive: 0x0d7fa0,
+    emissiveIntensity: 0.6,
   });
   const lumenParticleMaterial =
     new THREE.MeshStandardMaterial({
@@ -215,305 +217,104 @@ export function createSmoothER() {
   const lumenParticles = [];
 
   /* ========================================================
-     Main interconnected tubule network
+     Main tubule network
 
-     Local coordinates are used here. Final placement and
-     scale will be controlled through layout.js.
+     Reworked into a broad, open arc that sweeps from the
+     nucleus side up and over toward the Golgi/secretion
+     side, instead of a dense, overlapping tangle in the
+     centre. Local coordinates; final placement and scale
+     are controlled through layout.js.
      ======================================================== */
 
   const tubuleConfigurations = [
+    /*
+     * Primary arc — the main sweeping backbone of the
+     * network, matching the reference silhouette.
+     */
     {
       points: [
-        new THREE.Vector3(
-          -0.78,
-          0.05,
-          0
-        ),
-
-        new THREE.Vector3(
-          -0.42,
-          0.34,
-          0.08
-        ),
-
-        new THREE.Vector3(
-          0,
-          0.3,
-          -0.04
-        ),
-
-        new THREE.Vector3(
-          0.38,
-          0.48,
-          0.06
-        ),
-
-        new THREE.Vector3(
-          0.77,
-          0.27,
-          0
-        ),
+        new THREE.Vector3(-1.05, -0.05, 0.05),
+        new THREE.Vector3(-0.68, 0.42, 0.10),
+        new THREE.Vector3(-0.18, 0.62, 0.02),
+        new THREE.Vector3(0.35, 0.58, -0.04),
+        new THREE.Vector3(0.85, 0.32, 0.04),
+        new THREE.Vector3(1.15, 0.02, 0.06),
       ],
 
-      radius: 0.043,
+      radius: 0.05,
     },
 
+    /*
+     * Secondary lower arc, running roughly parallel but
+     * with a wider, gentler curve so it reads as a distinct
+     * strand rather than overlapping the primary arc.
+     */
     {
       points: [
-        new THREE.Vector3(
-          -0.72,
-          -0.14,
-          0.04
-        ),
-
-        new THREE.Vector3(
-          -0.35,
-          0.02,
-          -0.05
-        ),
-
-        new THREE.Vector3(
-          0.02,
-          -0.08,
-          0.08
-        ),
-
-        new THREE.Vector3(
-          0.39,
-          0.05,
-          -0.04
-        ),
-
-        new THREE.Vector3(
-          0.74,
-          -0.13,
-          0.04
-        ),
+        new THREE.Vector3(-1.0, -0.32, -0.02),
+        new THREE.Vector3(-0.6, -0.08, 0.06),
+        new THREE.Vector3(-0.1, 0.10, -0.03),
+        new THREE.Vector3(0.4, 0.14, 0.05),
+        new THREE.Vector3(0.9, -0.02, -0.02),
+        new THREE.Vector3(1.18, -0.28, 0.04),
       ],
 
-      radius: 0.047,
+      radius: 0.045,
     },
 
+    /*
+     * Short upper branch curling away from the primary arc.
+     */
     {
       points: [
-        new THREE.Vector3(
-          -0.64,
-          -0.43,
-          -0.03
-        ),
-
-        new THREE.Vector3(
-          -0.3,
-          -0.28,
-          0.07
-        ),
-
-        new THREE.Vector3(
-          0.06,
-          -0.4,
-          -0.06
-        ),
-
-        new THREE.Vector3(
-          0.42,
-          -0.26,
-          0.05
-        ),
-
-        new THREE.Vector3(
-          0.69,
-          -0.48,
-          -0.02
-        ),
-      ],
-
-      radius: 0.042,
-    },
-
-    {
-      points: [
-        new THREE.Vector3(
-          -0.42,
-          0.34,
-          0.08
-        ),
-
-        new THREE.Vector3(
-          -0.48,
-          0.08,
-          -0.05
-        ),
-
-        new THREE.Vector3(
-          -0.35,
-          -0.2,
-          0.05
-        ),
-
-        new THREE.Vector3(
-          -0.3,
-          -0.42,
-          0.07
-        ),
-      ],
-
-      radius: 0.039,
-    },
-
-    {
-      points: [
-        new THREE.Vector3(
-          0,
-          0.3,
-          -0.04
-        ),
-
-        new THREE.Vector3(
-          0.08,
-          0.08,
-          0.08
-        ),
-
-        new THREE.Vector3(
-          0.02,
-          -0.16,
-          -0.06
-        ),
-
-        new THREE.Vector3(
-          0.06,
-          -0.4,
-          -0.06
-        ),
-      ],
-
-      radius: 0.041,
-    },
-
-    {
-      points: [
-        new THREE.Vector3(
-          0.38,
-          0.48,
-          0.06
-        ),
-
-        new THREE.Vector3(
-          0.45,
-          0.24,
-          -0.05
-        ),
-
-        new THREE.Vector3(
-          0.39,
-          0.05,
-          -0.04
-        ),
-
-        new THREE.Vector3(
-          0.42,
-          -0.26,
-          0.05
-        ),
-      ],
-
-      radius: 0.04,
-    },
-
-    {
-      points: [
-        new THREE.Vector3(
-          -0.78,
-          0.05,
-          0
-        ),
-
-        new THREE.Vector3(
-          -0.92,
-          0.28,
-          -0.08
-        ),
-
-        new THREE.Vector3(
-          -0.83,
-          0.52,
-          0.04
-        ),
+        new THREE.Vector3(-0.68, 0.42, 0.10),
+        new THREE.Vector3(-0.58, 0.72, -0.06),
+        new THREE.Vector3(-0.30, 0.86, 0.04),
       ],
 
       radius: 0.036,
     },
 
+    /*
+     * Short branch dropping from the primary arc toward
+     * the translation / ribosome region.
+     */
     {
       points: [
-        new THREE.Vector3(
-          0.77,
-          0.27,
-          0
-        ),
-
-        new THREE.Vector3(
-          0.94,
-          0.08,
-          0.08
-        ),
-
-        new THREE.Vector3(
-          0.89,
-          -0.18,
-          -0.03
-        ),
-      ],
-
-      radius: 0.037,
-    },
-
-    {
-      points: [
-        new THREE.Vector3(
-          -0.64,
-          -0.43,
-          -0.03
-        ),
-
-        new THREE.Vector3(
-          -0.79,
-          -0.57,
-          0.07
-        ),
-
-        new THREE.Vector3(
-          -0.98,
-          -0.48,
-          -0.04
-        ),
+        new THREE.Vector3(-0.18, 0.62, 0.02),
+        new THREE.Vector3(-0.12, 0.34, -0.05),
+        new THREE.Vector3(-0.05, 0.10, 0.03),
       ],
 
       radius: 0.034,
     },
 
+    /*
+     * Short branch near the Golgi end, connecting the
+     * two main arcs.
+     */
     {
       points: [
-        new THREE.Vector3(
-          0.69,
-          -0.48,
-          -0.02
-        ),
-
-        new THREE.Vector3(
-          0.84,
-          -0.62,
-          0.06
-        ),
-
-        new THREE.Vector3(
-          1,
-          -0.49,
-          -0.03
-        ),
+        new THREE.Vector3(0.85, 0.32, 0.04),
+        new THREE.Vector3(0.92, 0.14, -0.03),
+        new THREE.Vector3(0.9, -0.02, -0.02),
       ],
 
-      radius: 0.035,
+      radius: 0.033,
+    },
+
+    /*
+     * Small tail branch on the far left, giving the
+     * network a bit of extra spread near the nucleus.
+     */
+    {
+      points: [
+        new THREE.Vector3(-1.05, -0.05, 0.05),
+        new THREE.Vector3(-1.22, 0.14, -0.05),
+        new THREE.Vector3(-1.18, 0.38, 0.05),
+      ],
+
+      radius: 0.032,
     },
   ];
 
@@ -557,56 +358,17 @@ export function createSmoothER() {
 
   /* ========================================================
      Rounded branch junctions
+
+     Placed only at true branch points on the new arc
+     layout, rather than densely through the centre.
      ======================================================== */
 
   const junctionPositions = [
-    new THREE.Vector3(
-      -0.42,
-      0.34,
-      0.08
-    ),
-
-    new THREE.Vector3(
-      0,
-      0.3,
-      -0.04
-    ),
-
-    new THREE.Vector3(
-      0.38,
-      0.48,
-      0.06
-    ),
-
-    new THREE.Vector3(
-      -0.35,
-      -0.2,
-      0.05
-    ),
-
-    new THREE.Vector3(
-      0.02,
-      -0.16,
-      -0.06
-    ),
-
-    new THREE.Vector3(
-      0.39,
-      0.05,
-      -0.04
-    ),
-
-    new THREE.Vector3(
-      -0.3,
-      -0.42,
-      0.07
-    ),
-
-    new THREE.Vector3(
-      0.42,
-      -0.26,
-      0.05
-    ),
+    new THREE.Vector3(-1.05, -0.05, 0.05),
+    new THREE.Vector3(-0.68, 0.42, 0.10),
+    new THREE.Vector3(-0.18, 0.62, 0.02),
+    new THREE.Vector3(0.85, 0.32, 0.04),
+    new THREE.Vector3(0.9, -0.02, -0.02),
   ];
 
   junctionPositions.forEach(
@@ -621,8 +383,8 @@ export function createSmoothER() {
           radius:
             randomBetween(
               index + 30,
-              0.047,
-              0.061
+              0.05,
+              0.065
             ),
 
           material:
@@ -714,6 +476,19 @@ export function createSmoothER() {
       particle
     );
   }
+
+  /* ========================================================
+     Render order
+
+     Ensures the ER tubes aren't drawn behind other
+     transparent organelles nearby (mitochondria, membrane).
+     ======================================================== */
+
+  group.traverse((child) => {
+    if (child.isMesh) {
+      child.renderOrder = 7;
+    }
+  });
 
   /* ========================================================
      Animation

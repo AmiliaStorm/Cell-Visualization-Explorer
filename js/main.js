@@ -17,6 +17,10 @@ import {
 } from "./cell/cell.js";
 
 import {
+  createBilayerPatch,
+} from "./cell/bilayer.js";
+
+import {
   createPostProcessing,
 } from "./postprocessing.js";
 
@@ -102,6 +106,35 @@ const cell =
  */
 
 /* ==========================================================
+   Membrane bilayer patch (Cutaway view only)
+   ========================================================== */
+
+const bilayerPatch =
+  createBilayerPatch();
+
+bilayerPatch.group.position.set(
+  1.9,
+  0.55,
+  1.05
+);
+
+bilayerPatch.group.rotation.set(
+  0,
+  -0.35,
+  0
+);
+
+bilayerPatch.group.scale.setScalar(
+  1.4
+);
+
+bilayerPatch.group.visible = false;
+
+scene.add(
+  bilayerPatch.group
+);
+
+/* ==========================================================
    Protein-production simulation
    ========================================================== */
 
@@ -178,6 +211,61 @@ const organelleInteraction =
   });
 
 /* ==========================================================
+   View mode buttons (3D / Cutaway)
+   ========================================================== */
+
+const viewMode3DButton =
+  document.querySelector(
+    "#view-mode-3d"
+  );
+
+const viewModeCutawayButton =
+  document.querySelector(
+    "#view-mode-cutaway"
+  );
+
+function setCutawayMode(isActive) {
+  bilayerPatch.group.visible =
+    isActive;
+
+  /*
+   * Dim the membrane slightly so the embedded
+   * bilayer patch reads clearly against it.
+   */
+  cell.membrane.material.opacity =
+    isActive ? 0.02 : 0.04;
+
+  viewMode3DButton.classList.toggle(
+    "active",
+    !isActive
+  );
+
+  viewModeCutawayButton.classList.toggle(
+    "active",
+    isActive
+  );
+}
+
+if (
+  viewMode3DButton &&
+  viewModeCutawayButton
+) {
+  viewMode3DButton.addEventListener(
+    "click",
+    () => setCutawayMode(false)
+  );
+
+  viewModeCutawayButton.addEventListener(
+    "click",
+    () => setCutawayMode(true)
+  );
+} else {
+  console.warn(
+    "Cutaway toggle buttons not found in the DOM."
+  );
+}
+
+/* ==========================================================
    Post-processing
    ========================================================== */
 
@@ -232,6 +320,13 @@ function animate() {
   cell.animate(
     elapsedTime,
     deltaTime
+  );
+
+  /*
+   * Animate the bilayer patch (only visible in Cutaway).
+   */
+  bilayerPatch.animate(
+    elapsedTime
   );
 
   /*

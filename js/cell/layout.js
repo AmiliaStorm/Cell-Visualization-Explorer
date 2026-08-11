@@ -52,23 +52,23 @@ export const cellLayout = {
 
      Smaller branching network in the upper-right area.
      ======================================================== */
-  smoothER: {
+ smoothER: {
     position: new THREE.Vector3(
-      0.52,
-      0.52,
-      0.00
+      0.35,
+      0.25,
+      0.15
     ),
 
     rotation: new THREE.Euler(
-      -0.10,
-      0.34,
-      -0.08
+      -0.06,
+      0.12,
+      -0.03
     ),
 
     scale: new THREE.Vector3(
-      0.60,
-      0.60,
-      0.60
+      0.72,
+      0.72,
+      0.72
     ),
   },
 

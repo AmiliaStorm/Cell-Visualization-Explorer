@@ -5,12 +5,12 @@ import * as THREE from "three";
  * Tuned to line up with layout.js positions.
  */
 const STAGE_POINTS = {
-  dna:         new THREE.Vector3(-0.92, 0.10, 0.55),
-  mrna:        new THREE.Vector3(-0.55, 0.05, 0.30),
-  translation: new THREE.Vector3(-0.05, -0.05, 0.10),
-  transport:   new THREE.Vector3(0.35, -0.15, 0.15),
-  golgi:       new THREE.Vector3(1.05, -0.05, 0.35),
-  secretion:   new THREE.Vector3(1.55, 0.05, 0.25),
+  dna:         new THREE.Vector3(-0.92, 0.35, 0.55),
+  mrna:        new THREE.Vector3(-0.45, 0.25, 0.30),
+  translation: new THREE.Vector3(0.05, 0.00, 0.10),
+  transport:   new THREE.Vector3(0.55, -0.10, 0.15),
+  golgi:       new THREE.Vector3(1.05, 0.15, 0.35),
+  secretion:   new THREE.Vector3(1.55, 0.20, 0.25),
 };
 
 const STAGE_ORDER = [
@@ -71,7 +71,7 @@ export function createPathwayMarkers({
       markerElements[id].classList.toggle(
       "completed",
       STAGE_ORDER.indexOf(id) < STAGE_ORDER.indexOf(stageId)
-    );
+  );
     });
   }
 
