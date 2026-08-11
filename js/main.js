@@ -113,21 +113,20 @@ const bilayerPatch =
   createBilayerPatch();
 
 bilayerPatch.group.position.set(
-  1.9,
-  0.55,
-  1.05
+  0.95,
+  1.25,
+  0.65
 );
 
 bilayerPatch.group.rotation.set(
-  0,
-  -0.35,
-  0
+  0.55,
+  0.3,
+  0.02
 );
 
 bilayerPatch.group.scale.setScalar(
-  1.4
+  1.0
 );
-
 bilayerPatch.group.visible = false;
 
 scene.add(
