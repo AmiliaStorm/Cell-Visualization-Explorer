@@ -1,12 +1,13 @@
 import * as THREE from "three";
 
 /* ==========================================================
-   Deform the membrane into a slightly organic shape
+   Organic membrane deformation
+
+   Creates a broad, slightly irregular animal-cell shape
+   rather than a perfect sphere.
    ========================================================== */
 
-function deformGeometry(
-  geometry
-) {
+function deformGeometry(geometry) {
   const position =
     geometry.attributes.position;
 
@@ -35,29 +36,68 @@ function deformGeometry(
       .copy(vertex)
       .normalize();
 
+    /* ------------------------------------------------------
+       Large-scale organic variation
+
+       These waves are deliberately subtle.
+       The main oval shape comes from membrane.scale below.
+       ------------------------------------------------------ */
+
     const waveOne =
       Math.sin(
-        direction.x * 3.2 +
-          direction.y * 2.1 -
-          direction.z * 1.7
-      ) * 0.08;
+        direction.x * 3.1 +
+        direction.y * 2.0 -
+        direction.z * 1.5
+      ) * 0.075;
 
     const waveTwo =
       Math.sin(
-        direction.z * 4.6 -
-          direction.x * 2.8
-      ) * 0.05;
+        direction.z * 4.2 -
+        direction.x * 2.6 +
+        direction.y * 0.8
+      ) * 0.045;
 
     const waveThree =
       Math.cos(
-        direction.y * 6.4 +
-          direction.z * 3.3
-      ) * 0.03;
+        direction.y * 5.4 +
+        direction.z * 2.8
+      ) * 0.028;
+
+    /* ------------------------------------------------------
+       Gentle asymmetric bulges
+
+       Prevents the cell from looking like a mathematical
+       ellipsoid.
+       ------------------------------------------------------ */
+
+    const rightBulge =
+      Math.max(
+        direction.x,
+        0
+      ) *
+      Math.sin(
+        direction.y * 2.8 +
+        direction.z
+      ) *
+      0.035;
+
+    const leftVariation =
+      Math.max(
+        -direction.x,
+        0
+      ) *
+      Math.cos(
+        direction.y * 3.2 -
+        direction.z * 1.4
+      ) *
+      0.025;
 
     const deformation =
       waveOne +
       waveTwo +
-      waveThree;
+      waveThree +
+      rightBulge +
+      leftVariation;
 
     vertex.addScaledVector(
       direction,
@@ -83,10 +123,11 @@ function deformGeometry(
   };
 }
 
-/* ==========================================================
-   Primary rim glow shader
 
-   This gives the membrane its elegant bright edge.
+/* ==========================================================
+   Primary rim glow
+
+   Bright cyan edge visible mostly around the silhouette.
    ========================================================== */
 
 function createRimMaterial() {
@@ -95,16 +136,16 @@ function createRimMaterial() {
       rimColor: {
         value:
           new THREE.Color(
-            0x2cc9ee
+            0x32cfff
           ),
       },
 
       rimStrength: {
-        value: 0.82,
+        value: 0.9,
       },
 
       rimPower: {
-        value: 4.2,
+        value: 3.5,
       },
     },
 
@@ -168,7 +209,7 @@ function createRimMaterial() {
           vec4(
             rimColor *
             rimStrength,
-            rim * 0.16
+            rim * 0.19
           );
       }
     `,
@@ -181,15 +222,16 @@ function createRimMaterial() {
     depthWrite: false,
     depthTest: true,
 
-    side: THREE.FrontSide,
+    side:
+      THREE.FrontSide,
   });
 }
+
 
 /* ==========================================================
    Secondary soft halo
 
-   Adds a broader, dimmer glow around the membrane
-   so the outline feels smoother and less harsh.
+   Wider and softer than the main rim.
    ========================================================== */
 
 function createHaloMaterial() {
@@ -198,16 +240,16 @@ function createHaloMaterial() {
       haloColor: {
         value:
           new THREE.Color(
-            0x1aa6d1
+            0x168fbd
           ),
       },
 
       haloStrength: {
-        value: 0.42,
+        value: 0.48,
       },
 
       haloPower: {
-        value: 2.2,
+        value: 2.0,
       },
     },
 
@@ -271,7 +313,7 @@ function createHaloMaterial() {
           vec4(
             haloColor *
             haloStrength,
-            halo * 0.05
+            halo * 0.065
           );
       }
     `,
@@ -284,9 +326,11 @@ function createHaloMaterial() {
     depthWrite: false,
     depthTest: true,
 
-    side: THREE.FrontSide,
+    side:
+      THREE.FrontSide,
   });
 }
+
 
 /* ==========================================================
    Cell membrane
@@ -296,7 +340,7 @@ export function createMembrane() {
   const geometry =
     new THREE.SphereGeometry(
       3,
-      96,
+      112,
       96
     );
 
@@ -307,38 +351,43 @@ export function createMembrane() {
     geometry
   );
 
-  /*
-   * Very subtle membrane body.
-   * It should define enclosure,
-   * not flood the scene with blue.
-   */
+
+  /* ========================================================
+     Membrane body
+
+     Very transparent, but slightly more visible than before
+     so the cell has a glass-like enclosed volume.
+     ======================================================== */
+
   const material =
     new THREE.MeshPhysicalMaterial({
-      color: 0x103b52,
+      color: 0x0b4058,
 
       transparent: true,
-      opacity: 0.022,
+      opacity: 0.04,
 
-      roughness: 0.34,
+      roughness: 0.28,
       metalness: 0,
 
-      transmission: 0,
+      transmission: 0.06,
 
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.35,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.28,
 
       emissive:
         new THREE.Color(
-          0x03131d
+          0x041b28
         ),
 
-      emissiveIntensity: 0.08,
+      emissiveIntensity: 0.16,
 
-      side: THREE.FrontSide,
+      side:
+        THREE.FrontSide,
 
       depthWrite: false,
       depthTest: true,
     });
+
 
   const membrane =
     new THREE.Mesh(
@@ -346,18 +395,40 @@ export function createMembrane() {
       material
     );
 
-  /*
-   * Slightly elongated animal-cell shape.
-   */
+
+  /* ========================================================
+     Animal-cell silhouette
+
+     THIS is the major visual change.
+
+     Wide x-axis
+     Lower y-axis
+     Slightly compressed depth
+
+     The organelles are NOT affected because they are not
+     children of this mesh.
+     ======================================================== */
+
   membrane.scale.set(
-    1.1,
-    0.94,
-    1
+    1.22,
+    0.82,
+    0.94
   );
 
-  /*
-   * Crisp main rim.
-   */
+
+  /* --------------------------------------------------------
+     Tiny tilt prevents the silhouette from looking perfectly
+     horizontal / artificial.
+     -------------------------------------------------------- */
+
+  membrane.rotation.z =
+    -0.018;
+
+
+  /* ========================================================
+     Crisp primary rim
+     ======================================================== */
+
   const rimGlow =
     new THREE.Mesh(
       geometry.clone(),
@@ -365,14 +436,16 @@ export function createMembrane() {
     );
 
   rimGlow.scale.setScalar(
-    1.01
+    1.008
   );
 
   rimGlow.renderOrder = 11;
 
-  /*
-   * Softer outer halo for a smoother edge.
-   */
+
+  /* ========================================================
+     Broad outer halo
+     ======================================================== */
+
   const haloGlow =
     new THREE.Mesh(
       geometry.clone(),
@@ -380,10 +453,11 @@ export function createMembrane() {
     );
 
   haloGlow.scale.setScalar(
-    1.03
+    1.022
   );
 
   haloGlow.renderOrder = 9;
+
 
   membrane.add(
     haloGlow
@@ -392,6 +466,11 @@ export function createMembrane() {
   membrane.add(
     rimGlow
   );
+
+
+  /* ========================================================
+     Metadata
+     ======================================================== */
 
   membrane.userData.type =
     "cellMembrane";
