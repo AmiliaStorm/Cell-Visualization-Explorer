@@ -48,6 +48,10 @@ import {
   createLysosomes,
 } from "./lysosomes.js";
 
+import {
+  createPeroxisomes,
+} from "./peroxisomes.js";
+
 /* ==========================================================
    Build complete animal cell
    ========================================================== */
@@ -133,6 +137,9 @@ export function buildCell(scene) {
 
   const lysosomes =
   createLysosomes();
+
+  const peroxisomes =
+  createPeroxisomes();
 
   /* ========================================================
      Nucleus layout
@@ -274,19 +281,58 @@ export function buildCell(scene) {
   }
 );
 
+
+/* ========================================================
+   Peroxisome layout
+   ======================================================== */
+
+peroxisomes.forEach(
+  (
+    peroxisome,
+    index
+  ) => {
+    const layout =
+      cellLayout.peroxisomes[
+        index
+      ];
+
+    if (!layout) {
+      return;
+    }
+
+    peroxisome.position.copy(
+      layout.position
+    );
+
+    peroxisome.rotation.copy(
+      layout.rotation
+    );
+
+    peroxisome.scale.setScalar(
+      layout.scale
+    );
+
+    /*
+     * Preserve configured scale during animation.
+     */
+    peroxisome.userData.layoutScale =
+      layout.scale;
+  }
+);
   /* ========================================================
      Assemble major organelles
      ======================================================== */
 
   contentGroup.add(
-    roughER.group,
-    smoothER.group,
-    nucleus.group,
-    golgi.group,
-    ribosomes,
-    ...mitochondria,
-    ... lysosomes
-  );
+  roughER.group,
+  smoothER.group,
+  nucleus.group,
+  golgi.group,
+  ribosomes,
+  ...mitochondria,
+  ...lysosomes,
+  ...peroxisomes
+);
 
   /* ========================================================
      Assemble complete cell
@@ -325,6 +371,7 @@ export function buildCell(scene) {
     ribosomes,
     cytoskeleton,
     lysosomes,
+    peroxisomes,
 
     /* ======================================================
        Animation
@@ -365,6 +412,10 @@ export function buildCell(scene) {
       );
 
       lysosomes.animate(
+      elapsedTime
+      );
+
+      peroxisomes.animate(
       elapsedTime
       );
 

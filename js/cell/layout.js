@@ -214,6 +214,98 @@ smoothER: {
     scale: 0.62,
   },
 ],
+
+/* ========================================================
+   Peroxisomes
+
+   Small oxidative organelles distributed throughout the
+   cytoplasm. Positioned separately from lysosomes so the
+   two populations remain visually distinguishable.
+   ======================================================== */
+
+peroxisomes: [
+  {
+    position: new THREE.Vector3(
+      -1.34,
+      -0.72,
+      0.28
+    ),
+
+    rotation: new THREE.Euler(
+      0.12,
+      -0.18,
+      0.22
+    ),
+
+    scale: 0.82,
+  },
+
+  {
+    position: new THREE.Vector3(
+      -1.28,
+      0.68,
+      0.3
+    ),
+
+    rotation: new THREE.Euler(
+      -0.16,
+      0.24,
+      -0.12
+    ),
+
+    scale: 0.72,
+  },
+
+  {
+    position: new THREE.Vector3(
+      0.88,
+      0.78,
+      0.34
+    ),
+
+    rotation: new THREE.Euler(
+      0.18,
+      -0.26,
+      0.1
+    ),
+
+    scale: 0.86,
+  },
+
+  {
+    position: new THREE.Vector3(
+      0.96,
+      -1.18,
+      0.3
+    ),
+
+    rotation: new THREE.Euler(
+      -0.12,
+      0.2,
+      0.18
+    ),
+
+    scale: 0.78,
+  },
+
+  {
+    position: new THREE.Vector3(
+      -0.62,
+      -1.34,
+      -0.2
+    ),
+
+    rotation: new THREE.Euler(
+      0.2,
+      0.14,
+      -0.24
+    ),
+
+    scale: 0.68,
+  },
+],
+
+
   /* ========================================================
      Golgi apparatus
 
