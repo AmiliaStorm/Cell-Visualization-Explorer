@@ -285,35 +285,47 @@ export function createProteinProductionSimulation({
      ======================================================== */
 
   const mrnaPoints = [
-    new THREE.Vector3(
-      -0.58,
-      0.06,
-      0.52
-    ),
+  /* Near the DNA inside the nucleus */
+  new THREE.Vector3(
+    -0.92,
+    0.10,
+    0.44
+  ),
 
-    new THREE.Vector3(
-      -0.35,
-      -0.08,
-      0.68
-    ),
+  /* Newly transcribed RNA */
+  new THREE.Vector3(
+    -0.72,
+    0.07,
+    0.50
+  ),
 
-    new THREE.Vector3(
-      -0.1,
-      -0.28,
-      0.75
-    ),
+  /* Moving toward nuclear envelope */
+  new THREE.Vector3(
+    -0.44,
+    -0.02,
+    0.53
+  ),
 
-    new THREE.Vector3(
-      0.05,
-      -0.58,
-      0.67
-    ),
+  /* Nuclear pore / exit region */
+  new THREE.Vector3(
+    -0.18,
+    -0.20,
+    0.50
+  ),
 
-    new THREE.Vector3(
-      0.18,
-      -0.82,
-      0.55
-    ),
+  /* Cytoplasmic side */
+  new THREE.Vector3(
+    0.02,
+    -0.45,
+    0.44
+  ),
+
+  /* Rough ER translation site */
+  new THREE.Vector3(
+    0.16,
+    -0.68,
+    0.40
+  ),
   ];
 
   const mrnaCurve =
@@ -536,30 +548,41 @@ export function createProteinProductionSimulation({
      ======================================================== */
 
   const transportCurve =
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(
-        0.18,
-        -0.9,
-        0.55
-      ),
+  new THREE.CatmullRomCurve3([
+    /* Rough ER */
+    new THREE.Vector3(
+      0.16,
+      -0.68,
+      0.40
+    ),
 
-      new THREE.Vector3(
-        0.55,
-        -1.05,
-        0.72
-      ),
+    /* Vesicle buds away from ER */
+    new THREE.Vector3(
+      0.40,
+      -0.76,
+      0.48
+    ),
 
-      new THREE.Vector3(
-        0.95,
-        -0.72,
-        0.72
-      ),
+    /* Cytoplasmic transport */
+    new THREE.Vector3(
+      0.72,
+      -0.55,
+      0.44
+    ),
 
-      new THREE.Vector3(
-        1.08,
-        -0.2,
-        0.4
-      ),
+    /* Approaching cis-Golgi */
+    new THREE.Vector3(
+      0.96,
+      -0.28,
+      0.36
+    ),
+
+    /* Golgi arrival */
+    new THREE.Vector3(
+      1.12,
+      -0.08,
+      0.28
+    ),
     ]);
 
   const transportPath =
@@ -659,32 +682,42 @@ export function createProteinProductionSimulation({
   /* ========================================================
      Secretion path: Golgi → plasma membrane
      ======================================================== */
+const secretionCurve =
+  new THREE.CatmullRomCurve3([
+    /* Trans-Golgi */
+    new THREE.Vector3(
+      1.12,
+      -0.08,
+      0.28
+    ),
 
-  const secretionCurve =
-    new THREE.CatmullRomCurve3([
-      new THREE.Vector3(
-        1.08,
-        -0.2,
-        0.4
-      ),
+    /* Newly formed secretory vesicle */
+    new THREE.Vector3(
+      1.45,
+      0.02,
+      0.32
+    ),
 
-      new THREE.Vector3(
-        1.75,
-        0.1,
-        0.7
-      ),
+    /* Cytoplasmic transport */
+    new THREE.Vector3(
+      1.85,
+      0.14,
+      0.30
+    ),
 
-      new THREE.Vector3(
-        2.1,
-        0.55,
-        0.65
-      ),
+    /* Approaching plasma membrane */
+    new THREE.Vector3(
+      2.25,
+      0.28,
+      0.26
+    ),
 
-      new THREE.Vector3(
-        2.12,
-        0.72,
-        0.35
-      ),
+    /* Plasma membrane fusion site */
+    new THREE.Vector3(
+      2.70,
+      0.45,
+      0.20
+    ),
     ]);
 
   const secretionPath =
