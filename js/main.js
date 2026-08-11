@@ -36,6 +36,10 @@ import {
   createOrganelleInteraction,
 } from "./ui/OrganelleInteraction.js";
 
+import {
+  createPathwayMarkers,
+} from "./ui/pathwayMarkers.js";
+
 /* ==========================================================
    Canvas container
    ========================================================== */
@@ -124,6 +128,16 @@ const cameraDirector =
 const ui =
   createAppUI({
     simulation,
+  });
+
+/* ==========================================================
+   Pathway markers (overlaid on 3D scene)
+   ========================================================== */
+
+const pathwayMarkers =
+  createPathwayMarkers({
+    container,
+    camera,
   });
 
 /* ==========================================================
@@ -234,6 +248,14 @@ function animate() {
    * Update the timeline, buttons, and active-stage UI.
    */
   ui.update();
+
+  /*
+   * Update pathway marker positions and active state.
+   */
+  pathwayMarkers.update();
+  pathwayMarkers.setActiveStage(
+    simulation.stage
+  );
 
   /*
    * Subtle animated lighting.

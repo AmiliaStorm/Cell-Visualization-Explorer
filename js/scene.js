@@ -3,15 +3,13 @@ import * as THREE from "three";
 
 /* ==========================================================
    Overview camera
-
-   Kept unchanged for now.
    ========================================================== */
 
 export const OVERVIEW_CAMERA_POSITION =
   new THREE.Vector3(
-    0.15,
     0.1,
-    11.5
+    0.02,
+    8.6
   );
 
 
@@ -300,7 +298,7 @@ export function createScene(
 
   const camera =
     new THREE.PerspectiveCamera(
-      46,
+      40,
       width / height,
       0.1,
       100
@@ -313,7 +311,7 @@ export function createScene(
 
 
   camera.lookAt(
-    0,
+    -0.3,
     0,
     0
   );
