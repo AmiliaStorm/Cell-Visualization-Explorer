@@ -992,3 +992,8 @@ button {
     display: none;
   }
 }
+
+/* Hide floating active-stage label over the cell */
+#active-stage-card {
+  display: none !important;
+}

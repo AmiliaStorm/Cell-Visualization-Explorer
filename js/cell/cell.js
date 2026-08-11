@@ -37,6 +37,10 @@ import {
 } from "./golgi.js";
 
 import {
+  createCentrosome,
+} from "./centrosome.js";
+
+import {
   cellLayout,
 } from "./layout.js";
 
@@ -52,6 +56,7 @@ import {
   createPeroxisomes,
 } from "./peroxisomes.js";
 
+
 /* ==========================================================
    Build complete animal cell
    ========================================================== */
@@ -60,29 +65,35 @@ export function buildCell(scene) {
   const group =
     new THREE.Group();
 
+
   group.name =
     "animalCell";
+
 
   /*
    * The membrane, cytoplasm and cytoskeleton remain
    * at full-cell scale.
    *
-   * Major organelles and the protein-production pathway
-   * are placed inside contentGroup.
+   * Major organelles are placed inside contentGroup.
    */
+
   const contentGroup =
     new THREE.Group();
 
+
   contentGroup.name =
     "cellContent";
+
 
   contentGroup.scale.setScalar(
     1.3
   );
 
+
   group.scale.setScalar(
     0.78
   );
+
 
   group.position.set(
     0,
@@ -90,11 +101,13 @@ export function buildCell(scene) {
     0
   );
 
+
   group.rotation.set(
     -0.03,
     0.07,
     0
   );
+
 
   /* ========================================================
      Create structures
@@ -103,43 +116,62 @@ export function buildCell(scene) {
   const membrane =
     createMembrane();
 
+
   const cytoplasm =
     createCytoplasm();
+
 
   const nucleus =
     createNucleus();
 
+
   const roughER =
     createRoughER();
+
 
   const smoothER =
     createSmoothER();
 
+
   const golgi =
     createGolgi();
+
 
   const mitochondria =
     createMitochondria();
 
+
   const ribosomes =
     createRibosomes();
+
 
   const cytoskeleton =
     createCytoskeleton();
 
+
+  const centrosome =
+    createCentrosome();
+
+
   const cytoplasmParticles =
     createCytoplasmParticles({
       proteinCount: 280,
+
       cellRadius: 3.05,
+
       nucleusRadius: 1.18,
+
       edgePadding: 0.2,
     });
 
+
   const lysosomes =
-  createLysosomes();
+    createLysosomes();
+
 
   const peroxisomes =
-  createPeroxisomes();
+    createPeroxisomes();
+
 
   /* ========================================================
      Nucleus layout
@@ -149,9 +181,11 @@ export function buildCell(scene) {
     cellLayout.nucleus.position
   );
 
+
   nucleus.group.scale.copy(
     cellLayout.nucleus.scale
   );
+
 
   /* ========================================================
      Rough ER layout
@@ -161,13 +195,16 @@ export function buildCell(scene) {
     cellLayout.roughER.position
   );
 
+
   roughER.group.rotation.copy(
     cellLayout.roughER.rotation
   );
 
+
   roughER.group.scale.copy(
     cellLayout.roughER.scale
   );
+
 
   /* ========================================================
      Smooth ER layout
@@ -177,13 +214,16 @@ export function buildCell(scene) {
     cellLayout.smoothER.position
   );
 
+
   smoothER.group.rotation.copy(
     cellLayout.smoothER.rotation
   );
 
+
   smoothER.group.scale.copy(
     cellLayout.smoothER.scale
   );
+
 
   /* ========================================================
      Golgi layout
@@ -193,13 +233,39 @@ export function buildCell(scene) {
     cellLayout.golgi.position
   );
 
+
   golgi.group.rotation.copy(
     cellLayout.golgi.rotation
   );
 
+
   golgi.group.scale.copy(
     cellLayout.golgi.scale
   );
+
+
+  /* ========================================================
+     Centrosome layout
+     ======================================================== */
+
+  if (
+    cellLayout.centrosome
+  ) {
+    centrosome.position.copy(
+      cellLayout.centrosome.position
+    );
+
+
+    centrosome.rotation.copy(
+      cellLayout.centrosome.rotation
+    );
+
+
+    centrosome.scale.copy(
+      cellLayout.centrosome.scale
+    );
+  }
+
 
   /* ========================================================
      Mitochondrial layout
@@ -213,126 +279,146 @@ export function buildCell(scene) {
       const layout =
         cellLayout
           .mitochondria[
-            index
-          ];
+          index
+        ];
+
 
       if (!layout) {
         return;
       }
 
+
       mitochondrion.position.copy(
         layout.position
       );
+
 
       mitochondrion.rotation.copy(
         layout.rotation
       );
 
+
       mitochondrion.scale.setScalar(
         layout.scale
       );
 
+
       /*
-       * Used by mitochondria.js so its breathing
-       * animation preserves the layout scale.
+       * Used by mitochondria.js so its breathing animation
+       * preserves the scale from layout.js.
        */
+
       mitochondrion.userData
         .layoutScale =
         layout.scale;
     }
   );
 
-   /* ========================================================
+
+  /* ========================================================
      Lysosome layout
      ======================================================== */
 
   lysosomes.forEach(
-  (
-    lysosome,
-    index
-  ) => {
-    const layout =
-      cellLayout.lysosomes[
-        index
-      ];
+    (
+      lysosome,
+      index
+    ) => {
+      const layout =
+        cellLayout.lysosomes[
+          index
+        ];
 
-    if (!layout) {
-      return;
+
+      if (!layout) {
+        return;
+      }
+
+
+      lysosome.position.copy(
+        layout.position
+      );
+
+
+      lysosome.rotation.copy(
+        layout.rotation
+      );
+
+
+      lysosome.scale.setScalar(
+        layout.scale
+      );
+
+
+      lysosome.userData
+        .layoutScale =
+        layout.scale;
     }
-
-    lysosome.position.copy(
-      layout.position
-    );
-
-    lysosome.rotation.copy(
-      layout.rotation
-    );
-
-    lysosome.scale.setScalar(
-      layout.scale
-    );
-
-    /*
-     * Preserves the configured scale during
-     * the breathing animation in lysosomes.js.
-     */
-    lysosome.userData.layoutScale =
-      layout.scale;
-  }
-);
+  );
 
 
-/* ========================================================
-   Peroxisome layout
-   ======================================================== */
+  /* ========================================================
+     Peroxisome layout
+     ======================================================== */
 
-peroxisomes.forEach(
-  (
-    peroxisome,
-    index
-  ) => {
-    const layout =
-      cellLayout.peroxisomes[
-        index
-      ];
+  peroxisomes.forEach(
+    (
+      peroxisome,
+      index
+    ) => {
+      const layout =
+        cellLayout.peroxisomes[
+          index
+        ];
 
-    if (!layout) {
-      return;
+
+      if (!layout) {
+        return;
+      }
+
+
+      peroxisome.position.copy(
+        layout.position
+      );
+
+
+      peroxisome.rotation.copy(
+        layout.rotation
+      );
+
+
+      peroxisome.scale.setScalar(
+        layout.scale
+      );
+
+
+      peroxisome.userData
+        .layoutScale =
+        layout.scale;
     }
+  );
 
-    peroxisome.position.copy(
-      layout.position
-    );
 
-    peroxisome.rotation.copy(
-      layout.rotation
-    );
-
-    peroxisome.scale.setScalar(
-      layout.scale
-    );
-
-    /*
-     * Preserve configured scale during animation.
-     */
-    peroxisome.userData.layoutScale =
-      layout.scale;
-  }
-);
   /* ========================================================
      Assemble major organelles
      ======================================================== */
 
   contentGroup.add(
-  roughER.group,
-  smoothER.group,
-  nucleus.group,
-  golgi.group,
-  ribosomes,
-  ...mitochondria,
-  ...lysosomes,
-  ...peroxisomes
-);
+    roughER.group,
+    smoothER.group,
+    nucleus.group,
+
+    centrosome,
+
+    golgi.group,
+
+    ribosomes,
+
+    ...mitochondria,
+    ...lysosomes,
+    ...peroxisomes
+  );
+
 
   /* ========================================================
      Assemble complete cell
@@ -340,15 +426,21 @@ peroxisomes.forEach(
 
   group.add(
     cytoplasm,
+
     cytoplasmParticles.group,
+
     cytoskeleton.group,
+
     contentGroup,
+
     membrane
   );
+
 
   scene.add(
     group
   );
+
 
   /* ========================================================
      Public cell object
@@ -356,22 +448,35 @@ peroxisomes.forEach(
 
   return {
     group,
+
     contentGroup,
 
     membrane,
+
     cytoplasm,
+
     cytoplasmParticles,
 
     nucleus,
+
     roughER,
+
     smoothER,
+
     golgi,
 
+    centrosome,
+
     mitochondria,
+
     ribosomes,
+
     cytoskeleton,
+
     lysosomes,
+
     peroxisomes,
+
 
     /* ======================================================
        Animation
@@ -385,49 +490,74 @@ peroxisomes.forEach(
         elapsedTime
       );
 
+
       cytoskeleton.animate(
         elapsedTime
       );
 
+
       roughER.animate(
         elapsedTime
       );
+
 
       smoothER.animate(
         elapsedTime,
         deltaTime
       );
 
+
       mitochondria.animate(
         elapsedTime
       );
 
+
       golgi.animate(
         elapsedTime
       );
+
 
       cytoplasmParticles.animate(
         elapsedTime,
         deltaTime
       );
 
+
       lysosomes.animate(
-      elapsedTime
+        elapsedTime
       );
 
+
       peroxisomes.animate(
-      elapsedTime
+        elapsedTime
       );
+
+
+      /*
+       * Centrosome animation.
+       */
+
+      if (
+        typeof centrosome.animate ===
+        "function"
+      ) {
+        centrosome.animate(
+          elapsedTime
+        );
+      }
+
 
       /*
        * Gentle plasma-membrane breathing.
        */
+
       const membranePulse =
         1 +
         Math.sin(
           elapsedTime * 0.55
         ) *
           0.006;
+
 
       membrane.scale.set(
         membrane.userData

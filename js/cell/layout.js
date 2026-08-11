@@ -339,25 +339,25 @@ export const cellLayout = {
      Larger and more prominent on the right side, slightly
      forward so the stacked cisternae are clearly visible.
      ======================================================== */
-  golgi: {
-    position: new THREE.Vector3(
-      1.00,
-      -0.06,
-      0.18
-    ),
+golgi: {
+  position: new THREE.Vector3(
+    1.12,
+    -0.08,
+    0.16
+  ),
 
-    rotation: new THREE.Euler(
-      0.04,
-      -0.22,
-      -0.04
-    ),
+  rotation: new THREE.Euler(
+    0.04,
+    -0.22,
+    -0.04
+  ),
 
-    scale: new THREE.Vector3(
-      0.56,
-      0.56,
-      0.56
-    ),
-  },
+  scale: new THREE.Vector3(
+    0.58,
+    0.58,
+    0.58
+  ),
+},
 
   /* ========================================================
      Centrosome
@@ -365,23 +365,23 @@ export const cellLayout = {
      Near the nucleus-Golgi region.
      Remove this block only if your cell.js does not use it.
      ======================================================== */
-  centrosome: {
-    position: new THREE.Vector3(
-      0.08,
-      -0.02,
-      0.02
-    ),
+centrosome: {
+  position: new THREE.Vector3(
+    0.12,
+    -0.10,
+    -0.14
+  ),
 
-    rotation: new THREE.Euler(
-      0.18,
-      0.24,
-      -0.08
-    ),
+  rotation: new THREE.Euler(
+    0.18,
+    0.24,
+    -0.08
+  ),
 
-    scale: new THREE.Vector3(
-      0.78,
-      0.78,
-      0.78
-    ),
-  },
+  scale: new THREE.Vector3(
+    0.54,
+    0.54,
+    0.54
+  ),
+},
 };

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 
+
 /* ==========================================================
    Deterministic pseudo-random helpers
 
@@ -15,6 +16,7 @@ function pseudoRandom(seed) {
     Math.floor(value);
 }
 
+
 function randomBetween(
   seed,
   minimum,
@@ -27,11 +29,12 @@ function randomBetween(
   );
 }
 
+
 /* ==========================================================
    Slightly deform spherical geometry
 
-   Peroxisomes are membrane-bound and generally rounded,
-   but biological structures should not look manufactured.
+   Peroxisomes remain compact and rounded, but not perfectly
+   mathematical spheres.
    ========================================================== */
 
 function deformGeometry(
@@ -48,6 +51,7 @@ function deformGeometry(
   const direction =
     new THREE.Vector3();
 
+
   for (
     let index = 0;
     index < position.count;
@@ -58,9 +62,11 @@ function deformGeometry(
       index
     );
 
+
     direction
       .copy(vertex)
       .normalize();
+
 
     const waveOne =
       Math.sin(
@@ -69,6 +75,7 @@ function deformGeometry(
         seed
       ) *
       strength;
+
 
     const waveTwo =
       Math.cos(
@@ -79,10 +86,24 @@ function deformGeometry(
       strength *
       0.45;
 
+
+    const waveThree =
+      Math.sin(
+        direction.y * 6.0 +
+        direction.z * 2.8 +
+        seed * 1.3
+      ) *
+      strength *
+      0.25;
+
+
     vertex.addScaledVector(
       direction,
-      waveOne + waveTwo
+      waveOne +
+      waveTwo +
+      waveThree
     );
+
 
     position.setXYZ(
       index,
@@ -92,13 +113,19 @@ function deformGeometry(
     );
   }
 
-  position.needsUpdate = true;
+
+  position.needsUpdate =
+    true;
+
 
   geometry.computeVertexNormals();
+
   geometry.computeBoundingSphere();
+
 
   return geometry;
 }
+
 
 /* ==========================================================
    Create one peroxisome
@@ -110,14 +137,18 @@ function createPeroxisome(
   const group =
     new THREE.Group();
 
+
   group.name =
     "peroxisome";
+
 
   group.userData.type =
     "peroxisome";
 
+
   group.userData.organelleId =
     "peroxisome";
+
 
   group.userData.info = {
     title:
@@ -137,16 +168,21 @@ function createPeroxisome(
     ],
   };
 
+
   /* ========================================================
      Size
+
+     Slightly smaller than lysosomes so the two organelle
+     populations remain easy to distinguish.
      ======================================================== */
 
   const radius =
     randomBetween(
       seed + 1,
-      0.115,
-      0.155
+      0.112,
+      0.150
     );
+
 
   /* ========================================================
      Materials
@@ -154,67 +190,121 @@ function createPeroxisome(
 
   const membraneMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0x48d6c7,
+      color:
+        0x42d9d0,
 
       transparent: true,
-      opacity: 0.38,
 
-      roughness: 0.2,
+      opacity: 0.46,
+
+      roughness: 0.16,
+
       metalness: 0,
 
-      clearcoat: 0.75,
-      clearcoatRoughness: 0.18,
+      transmission: 0.07,
 
-      emissive: 0x0b5f59,
-      emissiveIntensity: 0.34,
+      thickness: 0.10,
 
-      side: THREE.DoubleSide,
+      clearcoat: 0.84,
+
+      clearcoatRoughness:
+        0.13,
+
+      emissive:
+        0x0b625f,
+
+      emissiveIntensity:
+        0.48,
+
+      side:
+        THREE.DoubleSide,
 
       depthWrite: false,
+
       depthTest: true,
     });
 
+
   const matrixMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0x1f746d,
+    new THREE.MeshPhysicalMaterial({
+      color:
+        0x145c5b,
 
       transparent: true,
-      opacity: 0.24,
 
-      roughness: 0.5,
+      opacity: 0.27,
 
-      emissive: 0x0b3835,
-      emissiveIntensity: 0.25,
+      roughness: 0.38,
+
+      metalness: 0,
+
+      transmission: 0.02,
+
+      emissive:
+        0x082f30,
+
+      emissiveIntensity:
+        0.30,
+
+      clearcoat: 0.18,
+
+      clearcoatRoughness:
+        0.34,
 
       depthWrite: false,
     });
 
+
   const enzymeMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0xa6fff2,
+      color:
+        0xa9fff4,
 
-      emissive: 0x42d8c7,
-      emissiveIntensity: 0.72,
+      emissive:
+        0x42e7d5,
 
-      roughness: 0.28,
+      emissiveIntensity:
+        0.90,
+
+      roughness: 0.22,
+
       metalness: 0,
     });
 
+
+  /*
+   * Bright crystalline / enzyme-rich core.
+   *
+   * This gives peroxisomes a visual signature that is
+   * deliberately different from the diffuse contents of
+   * lysosomes.
+   */
+
   const coreMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0xd7fff8,
-
-      emissive: 0x63e8d9,
-      emissiveIntensity: 0.5,
-
-      roughness: 0.26,
+      color:
+        0xdffffa,
 
       transparent: true,
-      opacity: 0.78,
 
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.3,
+      opacity: 0.88,
+
+      roughness: 0.16,
+
+      metalness: 0,
+
+      clearcoat: 0.68,
+
+      clearcoatRoughness:
+        0.12,
+
+      emissive:
+        0x72f4e7,
+
+      emissiveIntensity:
+        0.72,
     });
+
 
   /* ========================================================
      Outer membrane
@@ -224,12 +314,15 @@ function createPeroxisome(
     deformGeometry(
       new THREE.SphereGeometry(
         radius,
-        36,
-        36
+        42,
+        42
       ),
+
       seed,
+
       radius * 0.065
     );
+
 
   const membrane =
     new THREE.Mesh(
@@ -237,8 +330,14 @@ function createPeroxisome(
       membraneMaterial
     );
 
-  membrane.castShadow = true;
-  membrane.renderOrder = 5;
+
+  membrane.castShadow =
+    true;
+
+
+  membrane.renderOrder =
+    5;
+
 
   membrane.scale.set(
     randomBetween(
@@ -260,6 +359,7 @@ function createPeroxisome(
     )
   );
 
+
   /* ========================================================
      Internal matrix
      ======================================================== */
@@ -267,30 +367,37 @@ function createPeroxisome(
   const matrix =
     new THREE.Mesh(
       new THREE.SphereGeometry(
-        radius * 0.82,
-        28,
-        28
+        radius * 0.81,
+        32,
+        32
       ),
+
       matrixMaterial
     );
+
 
   matrix.scale.copy(
     membrane.scale
   );
 
+
+  matrix.renderOrder =
+    2;
+
+
   /* ========================================================
      Dense enzyme-rich core
 
-     Some peroxisomes contain highly concentrated enzyme
-     regions. This gives them a distinct internal appearance
-     from lysosomes.
+     Slightly angular crystalline centre distinguishes the
+     peroxisome from lysosomes and other vesicles.
      ======================================================== */
 
   const coreGeometry =
     new THREE.IcosahedronGeometry(
-      radius * 0.25,
+      radius * 0.27,
       1
     );
+
 
   const core =
     new THREE.Mesh(
@@ -298,11 +405,13 @@ function createPeroxisome(
       coreMaterial
     );
 
+
   core.scale.set(
-    1,
+    1.05,
     0.78,
-    0.88
+    0.90
   );
+
 
   core.rotation.set(
     randomBetween(
@@ -324,6 +433,32 @@ function createPeroxisome(
     )
   );
 
+
+  core.position.set(
+    randomBetween(
+      seed + 11,
+      -radius * 0.08,
+      radius * 0.08
+    ),
+
+    randomBetween(
+      seed + 12,
+      -radius * 0.06,
+      radius * 0.06
+    ),
+
+    radius * 0.05
+  );
+
+
+  core.castShadow =
+    false;
+
+
+  core.renderOrder =
+    4;
+
+
   /* ========================================================
      Enzyme particles
      ======================================================== */
@@ -331,16 +466,19 @@ function createPeroxisome(
   const enzymeGroup =
     new THREE.Group();
 
+
   const enzymes = [];
+
 
   const enzymeCount =
     Math.floor(
       randomBetween(
         seed + 20,
-        7,
-        12
+        8,
+        13
       )
     );
+
 
   for (
     let index = 0;
@@ -353,14 +491,18 @@ function createPeroxisome(
           randomBetween(
             seed * 31 +
               index,
-            0.009,
-            0.016
+
+            0.010,
+            0.018
           ),
-          8,
-          8
+
+          9,
+          9
         ),
+
         enzymeMaterial
       );
+
 
     const direction =
       new THREE.Vector3(
@@ -368,6 +510,7 @@ function createPeroxisome(
           seed * 40 +
             index * 3 +
             1,
+
           -1,
           1
         ),
@@ -376,6 +519,7 @@ function createPeroxisome(
           seed * 40 +
             index * 3 +
             2,
+
           -1,
           1
         ),
@@ -384,10 +528,12 @@ function createPeroxisome(
           seed * 40 +
             index * 3 +
             3,
+
           -1,
           1
         )
       );
+
 
     if (
       direction.lengthSq() <
@@ -400,15 +546,25 @@ function createPeroxisome(
       );
     }
 
+
     direction.normalize();
+
+
+    /*
+     * Keep enzyme particles around the crystalline core
+     * rather than directly overlapping it.
+     */
 
     const distance =
       randomBetween(
         seed * 70 +
           index,
+
         radius * 0.34,
+
         radius * 0.64
       );
+
 
     particle.position.copy(
       direction.multiplyScalar(
@@ -416,33 +572,204 @@ function createPeroxisome(
       )
     );
 
+
     particle.userData.basePosition =
       particle.position.clone();
+
 
     particle.userData.phase =
       randomBetween(
         seed * 90 +
           index,
+
         0,
+
         Math.PI * 2
       );
+
 
     particle.userData.speed =
       randomBetween(
         seed * 120 +
           index,
+
         0.28,
-        0.6
+
+        0.60
       );
+
+
+    particle.renderOrder =
+      4;
+
 
     enzymeGroup.add(
       particle
     );
 
+
     enzymes.push(
       particle
     );
   }
+
+
+  /* ========================================================
+     Soft cyan inner glow
+
+     Very subtle layer that helps the peroxisome read as
+     luminous without making it look like a neon sphere.
+     ======================================================== */
+
+  const glowMaterial =
+    new THREE.MeshBasicMaterial({
+      color:
+        0x66fff0,
+
+      transparent: true,
+
+      opacity: 0.05,
+
+      blending:
+        THREE.AdditiveBlending,
+
+      side:
+        THREE.FrontSide,
+
+      depthWrite: false,
+
+      depthTest: true,
+    });
+
+
+  const glow =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        radius * 0.92,
+        28,
+        28
+      ),
+
+      glowMaterial
+    );
+
+
+  glow.scale.copy(
+    membrane.scale
+  );
+
+
+  glow.position.set(
+    -radius * 0.06,
+    radius * 0.08,
+    radius * 0.10
+  );
+
+
+  glow.renderOrder =
+    6;
+
+
+  /* ========================================================
+     Tiny oxidative activity particles
+
+     These are deliberately subtle. They help distinguish
+     the peroxisome from lysosomes without cluttering it.
+     ======================================================== */
+
+  const activityMaterial =
+    new THREE.MeshBasicMaterial({
+      color:
+        0xc7fff8,
+
+      transparent: true,
+
+      opacity: 0.72,
+
+      blending:
+        THREE.AdditiveBlending,
+
+      depthWrite: false,
+    });
+
+
+  const activityParticles = [];
+
+
+  const activityGroup =
+    new THREE.Group();
+
+
+  const activityCount = 3;
+
+
+  for (
+    let index = 0;
+    index < activityCount;
+    index += 1
+  ) {
+    const particle =
+      new THREE.Mesh(
+        new THREE.SphereGeometry(
+          radius * 0.035,
+          8,
+          8
+        ),
+
+        activityMaterial
+      );
+
+
+    const angle =
+      (
+        index /
+        activityCount
+      ) *
+        Math.PI *
+        2 +
+      seed;
+
+
+    particle.position.set(
+      Math.cos(angle) *
+        radius *
+        0.44,
+
+      Math.sin(angle) *
+        radius *
+        0.34,
+
+      randomBetween(
+        seed * 230 +
+          index,
+
+        -radius * 0.16,
+
+        radius * 0.18
+      )
+    );
+
+
+    particle.userData.basePosition =
+      particle.position.clone();
+
+
+    particle.userData.phase =
+      index *
+      2.1 +
+      seed;
+
+
+    activityGroup.add(
+      particle
+    );
+
+
+    activityParticles.push(
+      particle
+    );
+  }
+
 
   /* ========================================================
      Assemble peroxisome
@@ -452,33 +779,59 @@ function createPeroxisome(
     matrix,
     core,
     enzymeGroup,
-    membrane
+    activityGroup,
+    membrane,
+    glow
   );
+
+
+  /* ========================================================
+     Metadata / animation references
+     ======================================================== */
 
   group.userData.membrane =
     membrane;
 
+
   group.userData.matrix =
     matrix;
+
 
   group.userData.core =
     core;
 
+
   group.userData.enzymes =
     enzymes;
+
+
+  group.userData.activityParticles =
+    activityParticles;
+
+
+  group.userData.glow =
+    glow;
+
 
   group.userData.phase =
     randomBetween(
       seed * 190,
+
       0,
+
       Math.PI * 2
     );
+
 
   return group;
 }
 
+
 /* ==========================================================
    Create all peroxisomes
+
+   Five instances correspond to the five positions in
+   layout.js.
    ========================================================== */
 
 export function createPeroxisomes() {
@@ -489,6 +842,7 @@ export function createPeroxisomes() {
     createPeroxisome(6.5),
     createPeroxisome(8.1),
   ];
+
 
   /* ========================================================
      Animation
@@ -504,88 +858,118 @@ export function createPeroxisomes() {
           index
         ) => {
           const phase =
-            peroxisome.userData
+            peroxisome
+              .userData
               .phase;
 
-          /*
-           * Preserve scale assigned by layout.js.
-           */
+
+          /* ------------------------------------------------
+             Preserve scale assigned by layout.js
+             ------------------------------------------------ */
 
           const layoutScale =
-            peroxisome.userData
+            peroxisome
+              .userData
               .layoutScale ??
             peroxisome.scale.x;
 
-          /*
-           * Very subtle membrane breathing.
-           */
+
+          /* ------------------------------------------------
+             Very subtle membrane breathing
+             ------------------------------------------------ */
 
           const pulse =
             1 +
             Math.sin(
               elapsedTime *
                 0.45 +
-                phase
+              phase
             ) *
-              0.014;
+              0.012;
+
 
           peroxisome.scale.setScalar(
             layoutScale *
-              pulse
+            pulse
           );
 
-          /*
-           * Slow organelle rotation.
-           */
+
+          /* ------------------------------------------------
+             Slow organelle rotation
+             ------------------------------------------------ */
 
           peroxisome.rotation.y +=
-            0.00009 *
+            0.00008 *
             (
               index % 2 === 0
                 ? 1
                 : -1
             );
 
-          /*
-           * Dense enzyme core movement.
-           */
+
+          peroxisome.rotation.x +=
+            0.000018 *
+            (
+              index % 2 === 0
+                ? -1
+                : 1
+            );
+
+
+          /* ------------------------------------------------
+             Crystalline core movement
+             ------------------------------------------------ */
 
           const core =
-            peroxisome.userData
+            peroxisome
+              .userData
               .core;
 
+
           core.rotation.x +=
-            0.00045;
+            0.00038;
+
 
           core.rotation.y -=
-            0.00035;
+            0.00031;
 
-          /*
-           * Internal enzyme movement.
-           */
 
-          peroxisome.userData
+          core.rotation.z +=
+            0.00012;
+
+
+          /* ------------------------------------------------
+             Enzyme movement
+             ------------------------------------------------ */
+
+          peroxisome
+            .userData
             .enzymes
             .forEach(
-              (enzyme) => {
+              (
+                enzyme
+              ) => {
                 const base =
                   enzyme.userData
                     .basePosition;
+
 
                 const enzymePhase =
                   enzyme.userData
                     .phase;
 
+
                 const speed =
                   enzyme.userData
                     .speed;
+
 
                 enzyme.position.set(
                   base.x +
                     Math.sin(
                       elapsedTime *
                         speed +
-                        enzymePhase
+                      enzymePhase
                     ) *
                       0.0045,
 
@@ -593,7 +977,7 @@ export function createPeroxisomes() {
                     Math.cos(
                       elapsedTime *
                         speed +
-                        enzymePhase
+                      enzymePhase
                     ) *
                       0.0045,
 
@@ -601,25 +985,114 @@ export function createPeroxisomes() {
                     Math.sin(
                       elapsedTime *
                         0.48 +
-                        enzymePhase
+                      enzymePhase
                     ) *
                       0.004
                 );
 
+
                 enzyme.scale.setScalar(
                   0.92 +
-                    Math.sin(
-                      elapsedTime *
-                        0.8 +
-                        enzymePhase
-                    ) *
-                      0.07
+                  Math.sin(
+                    elapsedTime *
+                      0.8 +
+                    enzymePhase
+                  ) *
+                    0.07
                 );
               }
             );
+
+
+          /* ------------------------------------------------
+             Oxidative activity particles
+             ------------------------------------------------ */
+
+          peroxisome
+            .userData
+            .activityParticles
+            .forEach(
+              (
+                particle,
+                particleIndex
+              ) => {
+                const base =
+                  particle.userData
+                    .basePosition;
+
+
+                const particlePhase =
+                  particle.userData
+                    .phase;
+
+
+                particle.position.set(
+                  base.x +
+                    Math.sin(
+                      elapsedTime *
+                        0.58 +
+                      particlePhase
+                    ) *
+                      0.005,
+
+                  base.y +
+                    Math.cos(
+                      elapsedTime *
+                        0.54 +
+                      particlePhase
+                    ) *
+                      0.005,
+
+                  base.z +
+                    Math.sin(
+                      elapsedTime *
+                        0.50 +
+                      particlePhase +
+                      particleIndex
+                    ) *
+                      0.004
+                );
+
+
+                particle.scale.setScalar(
+                  0.75 +
+                  Math.sin(
+                    elapsedTime *
+                      1.25 +
+                    particlePhase
+                  ) *
+                    0.16
+                );
+              }
+            );
+
+
+          /* ------------------------------------------------
+             Very faint glow shimmer
+             ------------------------------------------------ */
+
+          const glow =
+            peroxisome
+              .userData
+              .glow;
+
+
+          if (
+            glow?.material
+          ) {
+            glow.material.opacity =
+              0.045 +
+              Math.sin(
+                elapsedTime *
+                  0.38 +
+                phase
+              ) *
+                0.010;
+          }
         }
       );
     };
+
 
   return peroxisomes;
 }
