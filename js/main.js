@@ -17,6 +17,10 @@ import {
 } from "./cell/cell.js";
 
 import {
+  createBilayerPatch,
+} from "./cell/bilayer.js";
+
+import {
   createPostProcessing,
 } from "./postprocessing.js";
 
@@ -35,6 +39,10 @@ import {
 import {
   createOrganelleInteraction,
 } from "./ui/OrganelleInteraction.js";
+
+import {
+  createPathwayMarkers,
+} from "./ui/pathwayMarkers.js";
 
 /* ==========================================================
    Canvas container
@@ -98,6 +106,34 @@ const cell =
  */
 
 /* ==========================================================
+   Membrane bilayer patch (Cutaway view only)
+   ========================================================== */
+
+const bilayerPatch =
+  createBilayerPatch();
+
+bilayerPatch.group.position.set(
+  0.95,
+  1.25,
+  0.65
+);
+
+bilayerPatch.group.rotation.set(
+  0.55,
+  0.3,
+  0.02
+);
+
+bilayerPatch.group.scale.setScalar(
+  1.0
+);
+bilayerPatch.group.visible = false;
+
+scene.add(
+  bilayerPatch.group
+);
+
+/* ==========================================================
    Protein-production simulation
    ========================================================== */
 
@@ -124,6 +160,16 @@ const cameraDirector =
 const ui =
   createAppUI({
     simulation,
+  });
+
+/* ==========================================================
+   Pathway markers (overlaid on 3D scene)
+   ========================================================== */
+
+const pathwayMarkers =
+  createPathwayMarkers({
+    container,
+    camera,
   });
 
 /* ==========================================================
@@ -162,6 +208,61 @@ const organelleInteraction =
       );
     },
   });
+
+/* ==========================================================
+   View mode buttons (3D / Cutaway)
+   ========================================================== */
+
+const viewMode3DButton =
+  document.querySelector(
+    "#view-mode-3d"
+  );
+
+const viewModeCutawayButton =
+  document.querySelector(
+    "#view-mode-cutaway"
+  );
+
+function setCutawayMode(isActive) {
+  bilayerPatch.group.visible =
+    isActive;
+
+  /*
+   * Dim the membrane slightly so the embedded
+   * bilayer patch reads clearly against it.
+   */
+  cell.membrane.material.opacity =
+    isActive ? 0.02 : 0.04;
+
+  viewMode3DButton.classList.toggle(
+    "active",
+    !isActive
+  );
+
+  viewModeCutawayButton.classList.toggle(
+    "active",
+    isActive
+  );
+}
+
+if (
+  viewMode3DButton &&
+  viewModeCutawayButton
+) {
+  viewMode3DButton.addEventListener(
+    "click",
+    () => setCutawayMode(false)
+  );
+
+  viewModeCutawayButton.addEventListener(
+    "click",
+    () => setCutawayMode(true)
+  );
+} else {
+  console.warn(
+    "Cutaway toggle buttons not found in the DOM."
+  );
+}
 
 /* ==========================================================
    Post-processing
@@ -221,6 +322,13 @@ function animate() {
   );
 
   /*
+   * Animate the bilayer patch (only visible in Cutaway).
+   */
+  bilayerPatch.animate(
+    elapsedTime
+  );
+
+  /*
    * Update the protein-production pathway.
    *
    * Its internal animation clock only advances while
@@ -234,6 +342,14 @@ function animate() {
    * Update the timeline, buttons, and active-stage UI.
    */
   ui.update();
+
+  /*
+   * Update pathway marker positions and active state.
+   */
+  pathwayMarkers.update();
+  pathwayMarkers.setActiveStage(
+    simulation.stage
+  );
 
   /*
    * Subtle animated lighting.

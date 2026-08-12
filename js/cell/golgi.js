@@ -2,8 +2,6 @@ import * as THREE from "three";
 
 /* ==========================================================
    Deterministic random helpers
-
-   Keeps the Golgi arrangement consistent after refreshing.
    ========================================================== */
 
 function pseudoRandom(seed) {
@@ -14,6 +12,7 @@ function pseudoRandom(seed) {
   return value -
     Math.floor(value);
 }
+
 
 function randomBetween(
   seed,
@@ -27,207 +26,124 @@ function randomBetween(
   );
 }
 
-/* ==========================================================
-   Rounded rectangle shape
-
-   Used as the base cross-section of each cisterna.
-   ========================================================== */
-
-function createRoundedRectangleShape(
-  width,
-  height,
-  cornerRadius
-) {
-  const shape =
-    new THREE.Shape();
-
-  const halfWidth =
-    width * 0.5;
-
-  const halfHeight =
-    height * 0.5;
-
-  const radius =
-    Math.min(
-      cornerRadius,
-      halfWidth,
-      halfHeight
-    );
-
-  shape.moveTo(
-    -halfWidth + radius,
-    -halfHeight
-  );
-
-  shape.lineTo(
-    halfWidth - radius,
-    -halfHeight
-  );
-
-  shape.quadraticCurveTo(
-    halfWidth,
-    -halfHeight,
-    halfWidth,
-    -halfHeight + radius
-  );
-
-  shape.lineTo(
-    halfWidth,
-    halfHeight - radius
-  );
-
-  shape.quadraticCurveTo(
-    halfWidth,
-    halfHeight,
-    halfWidth - radius,
-    halfHeight
-  );
-
-  shape.lineTo(
-    -halfWidth + radius,
-    halfHeight
-  );
-
-  shape.quadraticCurveTo(
-    -halfWidth,
-    halfHeight,
-    -halfWidth,
-    halfHeight - radius
-  );
-
-  shape.lineTo(
-    -halfWidth,
-    -halfHeight + radius
-  );
-
-  shape.quadraticCurveTo(
-    -halfWidth,
-    -halfHeight,
-    -halfWidth + radius,
-    -halfHeight
-  );
-
-  return shape;
-}
 
 /* ==========================================================
-   Create one curved Golgi cisterna
+   Create one curved, ring-like Golgi cisterna
+
+   Built from a closed curve so the geometry reads as a
+   rounded, tube-like band rather than a flat extruded
+   rectangle, matching the reference design.
    ========================================================== */
 
 function createCisterna({
-  width,
-  height,
-  depth,
-  bend,
-  wave,
+  radius,
+  tubeRadius,
+  arc,
+  waviness,
   twist,
+  phase,
   material,
 }) {
-  const shape =
-    createRoundedRectangleShape(
-      width,
-      height,
-      height * 0.46
-    );
+  const segments = 64;
 
-  const geometry =
-    new THREE.ExtrudeGeometry(
-      shape,
-      {
-        depth,
-        steps: 1,
+  const points = [];
 
-        bevelEnabled: true,
-        bevelSegments: 3,
-
-        bevelSize: 0.022,
-        bevelThickness: 0.018,
-
-        curveSegments: 22,
-      }
-    );
-
-  geometry.center();
-
-  const position =
-    geometry.attributes.position;
 
   for (
     let index = 0;
-    index < position.count;
+    index <= segments;
     index += 1
   ) {
-    const x =
-      position.getX(index);
+    const progress =
+      index / segments;
 
-    const y =
-      position.getY(index);
 
-    const z =
-      position.getZ(index);
+    const angle =
+      -arc * 0.5 +
+      arc * progress;
 
-    const normalizedX =
-      THREE.MathUtils.clamp(
-        x / (width * 0.5),
-        -1,
-        1
-      );
 
     /*
-     * Bend in the y-direction so the
-     * curvature is clearly visible
-     * from the front camera.
-     *
-     * The ends rise more than the centre,
-     * producing the characteristic
-     * curved Golgi cisterna shape.
+     * Base ring shape.
      */
-    const visibleBend =
-      Math.pow(
-        Math.abs(normalizedX),
-        1.65
-      ) * bend;
 
-    const surfaceWave =
+    const baseX =
+      Math.sin(angle) *
+      radius;
+
+
+    const baseZ =
+      (
+        Math.cos(angle) -
+        1
+      ) *
+      radius *
+      0.35;
+
+
+    /*
+     * Organic waviness so the band isn't a perfect
+     * mathematical ring.
+     */
+
+    const waveY =
       Math.sin(
-        normalizedX *
-        Math.PI *
-        2
-      ) * wave;
-
-    const depthWave =
-      Math.sin(
-        normalizedX *
-        Math.PI
-      ) * twist;
-
-    position.setXYZ(
-      index,
-
-      x,
-
-      y +
-        visibleBend +
-        surfaceWave,
-
-      z +
-        depthWave +
-        Math.cos(
-          normalizedX *
+        progress *
           Math.PI *
-          2
-        ) *
-          wave *
-          0.22
+          3.4 +
+        phase
+      ) *
+      waviness;
+
+
+    const waveTwist =
+      Math.cos(
+        progress *
+          Math.PI *
+          2.1 +
+        phase * 1.3
+      ) *
+      twist;
+
+
+    points.push(
+      new THREE.Vector3(
+        baseX,
+        waveY,
+        baseZ +
+          waveTwist
+      )
     );
   }
 
-  position.needsUpdate =
-    true;
+
+  const curve =
+    new THREE.CatmullRomCurve3(
+      points,
+      false,
+      "catmullrom",
+      0.5
+    );
+
+
+  const geometry =
+    new THREE.TubeGeometry(
+      curve,
+
+      Math.round(
+        segments * 1.1
+      ),
+
+      tubeRadius,
+
+      14,
+
+      false
+    );
+
 
   geometry.computeVertexNormals();
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
+
 
   const mesh =
     new THREE.Mesh(
@@ -235,129 +151,110 @@ function createCisterna({
       material
     );
 
+
   mesh.castShadow = true;
   mesh.receiveShadow = true;
 
-  return mesh;
+
+  return {
+    mesh,
+    curve,
+  };
 }
 
-/* ==========================================================
-   Calculate the approximate cisterna-end position
-   ========================================================== */
-
-function getCisternaEndPosition({
-  side,
-  width,
-  bend,
-  wave,
-}) {
-  const normalizedX =
-    side < 0 ? -1 : 1;
-
-  return new THREE.Vector3(
-    normalizedX *
-      width *
-      0.5,
-
-    bend,
-
-    wave * 0.22
-  );
-}
 
 /* ==========================================================
-   Create a swollen cisterna end
+   Swollen end cap
+
+   Placed at the open end of each curved band so it reads
+   as a rounded, bulbous terminus rather than an abrupt cut.
    ========================================================== */
 
 function createCisternaEnd({
   position,
-  height,
-  depth,
+  radius,
   material,
 }) {
   const end =
     new THREE.Mesh(
       new THREE.SphereGeometry(
-        height * 0.65,
+        radius,
         18,
         18
       ),
       material
     );
 
+
   end.position.copy(
     position
   );
 
-  end.scale.set(
-    1.1,
-    0.78,
-    depth /
-      (height * 1.3)
-  );
 
   end.castShadow = true;
+
 
   return end;
 }
 
+
 /* ==========================================================
-   Create one Golgi vesicle with cargo
+   Golgi vesicle cluster
+
+   Several small vesicles grouped tightly together rather
+   than single particles spread individually, matching the
+   dense clusters seen in the reference image.
    ========================================================== */
 
-function createVesicle({
-  radius,
+function createVesicleCluster({
+  vesicleCount,
+  spread,
   shellMaterial,
-  cargoMaterial,
-  cargoCount,
   seed,
 }) {
   const group =
     new THREE.Group();
 
-  const shell =
-    new THREE.Mesh(
-      new THREE.SphereGeometry(
-        radius,
-        22,
-        22
-      ),
-      shellMaterial
-    );
 
-  shell.renderOrder = 4;
+  const vesicles = [];
 
-  group.add(shell);
-
-  const cargoParticles = [];
 
   for (
     let index = 0;
-    index < cargoCount;
+    index < vesicleCount;
     index += 1
   ) {
-    const cargo =
-      new THREE.Mesh(
-        new THREE.SphereGeometry(
-          radius * 0.18,
-          9,
-          9
-        ),
-        cargoMaterial
+    const localSeed =
+      seed * 40 +
+      index;
+
+
+    const vesicleRadius =
+      randomBetween(
+        localSeed + 1,
+
+        0.045,
+
+        0.085
       );
 
-    const localSeed =
-      seed * 20 +
-      index;
+
+    const vesicle =
+      new THREE.Mesh(
+        new THREE.SphereGeometry(
+          vesicleRadius,
+
+          16,
+
+          16
+        ),
+
+        shellMaterial
+      );
+
 
     const direction =
       new THREE.Vector3(
-        randomBetween(
-          localSeed + 1,
-          -1,
-          1
-        ),
-
         randomBetween(
           localSeed + 2,
           -1,
@@ -368,13 +265,19 @@ function createVesicle({
           localSeed + 3,
           -1,
           1
+        ),
+
+        randomBetween(
+          localSeed + 4,
+          -1,
+          1
         )
       );
 
+
     if (
-      direction.lengthSq() <
-      0.001
-    ) {
+  direction.lengthSq() < 0.001
+) {
       direction.set(
         1,
         0,
@@ -382,44 +285,61 @@ function createVesicle({
       );
     }
 
+
     direction.normalize();
+
 
     const distance =
       randomBetween(
-        localSeed + 4,
-        radius * 0.16,
-        radius * 0.52
+        localSeed + 5,
+
+        0,
+
+        spread
       );
 
-    cargo.position.copy(
+
+    vesicle.position.copy(
       direction.multiplyScalar(
         distance
       )
     );
 
-    cargo.userData.basePosition =
-      cargo.position.clone();
 
-    cargo.userData.phase =
+    vesicle.userData.basePosition =
+      vesicle.position.clone();
+
+
+    vesicle.userData.phase =
       randomBetween(
-        localSeed + 5,
+        localSeed + 6,
+
         0,
+
         Math.PI * 2
       );
 
-    group.add(cargo);
 
-    cargoParticles.push(
-      cargo
+    vesicle.castShadow = true;
+
+
+    group.add(
+      vesicle
+    );
+
+
+    vesicles.push(
+      vesicle
     );
   }
 
+
   return {
     group,
-    shell,
-    cargoParticles,
+    vesicles,
   };
 }
+
 
 /* ==========================================================
    Golgi apparatus
@@ -429,409 +349,552 @@ export function createGolgi() {
   const group =
     new THREE.Group();
 
+
   group.name =
     "golgiApparatus";
+
 
   group.userData.type =
     "golgi";
 
-  /* --------------------------------------------------------
+
+  group.userData.organelleId =
+    "golgi";
+
+
+  group.userData.info = {
+    title:
+      "Golgi Apparatus",
+
+    subtitle:
+      "Protein processing and sorting",
+
+    summary:
+      "A stack of curved, tube-like cisternae that modifies, sorts and packages proteins and lipids.",
+
+    functions: [
+      "Protein modification",
+      "Protein sorting",
+      "Vesicle packaging",
+      "Secretion",
+    ],
+  };
+
+
+  /* ========================================================
      Materials
-     -------------------------------------------------------- */
+     ======================================================== */
 
   const cisternaMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0xc95b9d,
+      color: 0xd35ca8,
 
       transparent: true,
-      opacity: 0.92,
 
-      roughness: 0.3,
+      opacity: 0.96,
+
+      roughness: 0.24,
+
       metalness: 0,
 
       transmission: 0,
 
-      clearcoat: 0.58,
-      clearcoatRoughness: 0.24,
+      clearcoat: 0.75,
 
-      emissive: 0x4b1239,
-      emissiveIntensity: 0.25,
+      clearcoatRoughness: 0.16,
 
-      side: THREE.DoubleSide,
+      emissive:
+        0x54113f,
+
+      emissiveIntensity:
+        0.4,
+
+      side:
+        THREE.DoubleSide,
     });
 
-  const edgeMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0xe578b6,
 
-      emissive: 0x641749,
-      emissiveIntensity: 0.4,
+  const endMaterial =
+    new THREE.MeshPhysicalMaterial({
+      color: 0xf07bc7,
 
-      roughness: 0.3,
+      emissive:
+        0x741755,
+
+      emissiveIntensity:
+        0.55,
+
+      roughness: 0.22,
+
       metalness: 0,
+
+      clearcoat: 0.68,
+
+      clearcoatRoughness:
+        0.16,
     });
+
+
+  /*
+   * Darker, more saturated purple than before,
+   * matching the reference vesicle clusters.
+   */
 
   const vesicleMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0xe884bd,
+      color: 0x8b3fb8,
 
       transparent: true,
-      opacity: 0.68,
+
+      opacity: 0.9,
 
       roughness: 0.2,
+
       metalness: 0,
 
-      transmission: 0.12,
-      thickness: 0.1,
+      transmission: 0.06,
 
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.2,
+      thickness: 0.12,
 
-      depthWrite: false,
+      clearcoat: 0.8,
+
+      clearcoatRoughness:
+        0.14,
+
+      emissive:
+        0x4a1670,
+
+      emissiveIntensity:
+        0.5,
     });
 
-  const cargoMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0xc95cff,
-
-      emissive: 0x721eff,
-      emissiveIntensity: 1.1,
-
-      roughness: 0.26,
-    });
 
   const cisternae = [];
+
   const cisternaGroups = [];
-  const vesicles = [];
-  const cargoParticles = [];
 
-  /* --------------------------------------------------------
-     Curved Golgi stack
-     -------------------------------------------------------- */
+  const vesicleClusters = [];
 
-  const layerCount = 7;
+  const allVesicles = [];
 
-  for (
-    let index = 0;
-    index < layerCount;
-    index += 1
-  ) {
-    const progress =
-      index /
-      (layerCount - 1);
 
-    const distanceFromMiddle =
-      Math.abs(
-        progress - 0.5
-      ) * 2;
+  /* ========================================================
+     Curved cisterna stack
 
-    /*
-     * Middle cisternae are longest.
-     * Top and bottom layers are shorter.
-     */
-    const width =
-      1.48 -
-      distanceFromMiddle *
-        0.27;
+     Six curved, tube-like bands arranged as a stack,
+     replacing the previous flat extruded rectangles.
+     ======================================================== */
 
-    const height =
-      0.115 +
-      (
-        1 -
-        distanceFromMiddle
-      ) *
-        0.018;
-
-    const depth =
-      0.2 +
-      progress * 0.018;
-
-    const bend =
-      0.16 +
-      progress * 0.035;
-
-    const wave =
-      0.012 +
-      (
-        index % 2
-      ) * 0.008;
-
-    const twist =
-      0.055 +
-      progress * 0.025;
-
-    const layerGroup =
-      new THREE.Group();
-
-    const cisterna =
-      createCisterna({
-        width,
-        height,
-        depth,
-        bend,
-        wave,
-        twist,
-        material:
-          cisternaMaterial,
-      });
-
-    layerGroup.add(
-      cisterna
-    );
-
-    const leftEndPosition =
-      getCisternaEndPosition({
-        side: -1,
-        width,
-        bend,
-        wave,
-      });
-
-    const rightEndPosition =
-      getCisternaEndPosition({
-        side: 1,
-        width,
-        bend,
-        wave,
-      });
-
-    const leftEnd =
-      createCisternaEnd({
-        position:
-          leftEndPosition,
-        height,
-        depth,
-        material:
-          edgeMaterial,
-      });
-
-    const rightEnd =
-      createCisternaEnd({
-        position:
-          rightEndPosition,
-        height,
-        depth,
-        material:
-          edgeMaterial,
-      });
-
-    /*
-     * The trans side is slightly more
-     * swollen than the cis side.
-     */
-    rightEnd.scale.multiplyScalar(
-      1.08
-    );
-
-    layerGroup.add(
-      leftEnd,
-      rightEnd
-    );
-
-    layerGroup.position.y =
-      (
-        index -
-        (layerCount - 1) / 2
-      ) * 0.185;
-
-    layerGroup.position.x =
-      Math.sin(
-        index * 0.8
-      ) * 0.035;
-
-    layerGroup.position.z =
-      (
-        index -
-        (layerCount - 1) / 2
-      ) * 0.035;
-
-    layerGroup.rotation.z =
-      Math.sin(
-        index * 0.68
-      ) * 0.028;
-
-    layerGroup.rotation.y =
-      Math.cos(
-        index * 0.7
-      ) * 0.025;
-
-    layerGroup.userData.baseY =
-      layerGroup.position.y;
-
-    layerGroup.userData.baseZ =
-      layerGroup.position.z;
-
-    layerGroup.userData.baseRotationZ =
-      layerGroup.rotation.z;
-
-    layerGroup.userData.phase =
-      index * 0.88;
-
-    group.add(
-      layerGroup
-    );
-
-    cisternae.push(
-      cisterna
-    );
-
-    cisternaGroups.push(
-      layerGroup
-    );
-  }
-
-  /* --------------------------------------------------------
-     Incoming and outgoing Golgi vesicles
-     -------------------------------------------------------- */
-
-  const vesicleConfigurations = [
+  const layerDefinitions = [
     {
-      position:
-        new THREE.Vector3(
-          -0.93,
-          0.48,
-          0.08
-        ),
-      radius: 0.115,
-      cargoCount: 4,
+      radius: 0.62,
+      tubeRadius: 0.075,
+      arc: Math.PI * 1.15,
+      waviness: 0.03,
+      twist: 0.05,
+
+      y: 0.47,
+      rotationZ: -0.04,
+      rotationY: 0.05,
     },
 
     {
-      position:
-        new THREE.Vector3(
-          -1.02,
-          0.08,
-          0.14
-        ),
-      radius: 0.095,
-      cargoCount: 3,
+      radius: 0.68,
+      tubeRadius: 0.08,
+      arc: Math.PI * 1.2,
+      waviness: 0.032,
+      twist: 0.055,
+
+      y: 0.27,
+      rotationZ: -0.02,
+      rotationY: 0.03,
     },
 
     {
-      position:
-        new THREE.Vector3(
-          -0.83,
-          -0.42,
-          0.04
-        ),
-      radius: 0.105,
-      cargoCount: 3,
+      radius: 0.73,
+      tubeRadius: 0.084,
+      arc: Math.PI * 1.24,
+      waviness: 0.034,
+      twist: 0.06,
+
+      y: 0.06,
+      rotationZ: -0.006,
+      rotationY: 0.008,
     },
 
     {
-      position:
-        new THREE.Vector3(
-          0.93,
-          0.43,
-          0.13
-        ),
-      radius: 0.12,
-      cargoCount: 5,
+      radius: 0.75,
+      tubeRadius: 0.084,
+      arc: Math.PI * 1.24,
+      waviness: 0.034,
+      twist: 0.06,
+
+      y: -0.15,
+      rotationZ: 0.012,
+      rotationY: -0.014,
     },
 
     {
-      position:
-        new THREE.Vector3(
-          1.02,
-          0.02,
-          0.2
-        ),
-      radius: 0.105,
-      cargoCount: 4,
+      radius: 0.71,
+      tubeRadius: 0.08,
+      arc: Math.PI * 1.2,
+      waviness: 0.032,
+      twist: 0.055,
+
+      y: -0.36,
+      rotationZ: 0.03,
+      rotationY: -0.035,
     },
 
     {
-      position:
-        new THREE.Vector3(
-          0.9,
-          -0.48,
-          0.08
-        ),
-      radius: 0.125,
-      cargoCount: 5,
-    },
+      radius: 0.63,
+      tubeRadius: 0.075,
+      arc: Math.PI * 1.15,
+      waviness: 0.03,
+      twist: 0.05,
 
-    {
-      position:
-        new THREE.Vector3(
-          0.68,
-          -0.73,
-          -0.03
-        ),
-      radius: 0.09,
-      cargoCount: 3,
+      y: -0.55,
+      rotationZ: 0.05,
+      rotationY: -0.055,
     },
   ];
 
-  vesicleConfigurations.forEach(
+
+  layerDefinitions.forEach(
+    (
+      definition,
+      index
+    ) => {
+      const phase =
+        index * 0.83;
+
+
+      const layerGroup =
+        new THREE.Group();
+
+
+      const cisterna =
+        createCisterna({
+          radius:
+            definition.radius,
+
+          tubeRadius:
+            definition.tubeRadius,
+
+          arc:
+            definition.arc,
+
+          waviness:
+            definition.waviness,
+
+          twist:
+            definition.twist,
+
+          phase,
+
+          material:
+            cisternaMaterial,
+        });
+
+
+      layerGroup.add(
+        cisterna.mesh
+      );
+
+
+      /* ----------------------------------------------------
+         Bulbous ends at both open tips of the curved band
+         ---------------------------------------------------- */
+
+      const startPoint =
+        cisterna.curve.getPoint(
+          0
+        );
+
+
+      const endPoint =
+        cisterna.curve.getPoint(
+          1
+        );
+
+
+      const startEnd =
+        createCisternaEnd({
+          position:
+            startPoint,
+
+          radius:
+            definition.tubeRadius *
+            1.35,
+
+          material:
+            endMaterial,
+        });
+
+
+      const endEnd =
+        createCisternaEnd({
+          position:
+            endPoint,
+
+          radius:
+            definition.tubeRadius *
+            1.5,
+
+          material:
+            endMaterial,
+        });
+
+
+      layerGroup.add(
+        startEnd,
+        endEnd
+      );
+
+
+      /* ----------------------------------------------------
+         Layer placement
+         ---------------------------------------------------- */
+
+      layerGroup.position.set(
+        -0.05,
+        definition.y,
+        0
+      );
+
+
+      layerGroup.rotation.z =
+        definition.rotationZ;
+
+
+      layerGroup.rotation.y =
+        definition.rotationY;
+
+
+      layerGroup.rotation.x =
+        Math.sin(
+          index * 0.72
+        ) *
+        0.022;
+
+
+      layerGroup.userData.baseY =
+        definition.y;
+
+
+      layerGroup.userData.baseRotationZ =
+        definition.rotationZ;
+
+
+      layerGroup.userData.baseRotationY =
+        definition.rotationY;
+
+
+      layerGroup.userData.phase =
+        phase;
+
+
+      group.add(
+        layerGroup
+      );
+
+
+      cisternae.push(
+        cisterna.mesh
+      );
+
+
+      cisternaGroups.push(
+        layerGroup
+      );
+    }
+  );
+
+
+  /* ========================================================
+     Vesicle clusters
+
+     Dense clumps of small vesicles positioned around the
+     stack, especially near the trans (secretion) side,
+     matching the reference image's tight groupings.
+     ======================================================== */
+
+  const clusterConfigurations = [
+    {
+      position:
+        new THREE.Vector3(
+          -0.68,
+          0.4,
+          0.18
+        ),
+
+      vesicleCount: 5,
+      spread: 0.13,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          -0.78,
+          0.02,
+          0.22
+        ),
+
+      vesicleCount: 4,
+      spread: 0.11,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          -0.7,
+          -0.38,
+          0.18
+        ),
+
+      vesicleCount: 4,
+      spread: 0.12,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          0.7,
+          0.5,
+          0.24
+        ),
+
+      vesicleCount: 6,
+      spread: 0.15,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          0.82,
+          0.16,
+          0.3
+        ),
+
+      vesicleCount: 5,
+      spread: 0.13,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          0.86,
+          -0.16,
+          0.27
+        ),
+
+      vesicleCount: 6,
+      spread: 0.15,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          0.74,
+          -0.46,
+          0.2
+        ),
+
+      vesicleCount: 5,
+      spread: 0.13,
+    },
+
+    {
+      position:
+        new THREE.Vector3(
+          0.5,
+          -0.7,
+          0.12
+        ),
+
+      vesicleCount: 3,
+      spread: 0.1,
+    },
+  ];
+
+
+  clusterConfigurations.forEach(
     (
       configuration,
       index
     ) => {
-      const vesicle =
-        createVesicle({
-          radius:
-            configuration.radius,
+      const cluster =
+        createVesicleCluster({
+          vesicleCount:
+            configuration.vesicleCount,
+
+          spread:
+            configuration.spread,
 
           shellMaterial:
             vesicleMaterial,
-
-          cargoMaterial,
-
-          cargoCount:
-            configuration
-              .cargoCount,
 
           seed:
             index + 1,
         });
 
-      vesicle.group.position.copy(
+
+      cluster.group.position.copy(
         configuration.position
       );
 
-      vesicle.group.userData
+
+      cluster.group.userData
         .basePosition =
         configuration
           .position
           .clone();
 
-      vesicle.group.userData.phase =
+
+      cluster.group.userData.phase =
         index * 1.17;
 
+
       group.add(
-        vesicle.group
+        cluster.group
       );
 
-      vesicles.push(
-        vesicle.group
+
+      vesicleClusters.push(
+        cluster.group
       );
 
-      cargoParticles.push(
-        ...vesicle
-          .cargoParticles
+
+      allVesicles.push(
+        ...cluster.vesicles
       );
     }
   );
 
-  /*
-   * Slight overall perspective angle.
-   * Layout.js handles the final position,
-   * rotation and scale of this group.
-   */
+
+  /* ========================================================
+     Slight 3D presentation angle
+     ======================================================== */
+
   group.rotation.set(
-    -0.04,
-    -0.12,
-    -0.03
+    -0.055,
+    -0.10,
+    -0.025
   );
 
-  /* --------------------------------------------------------
+
+  /* ========================================================
      Animation
-     -------------------------------------------------------- */
+     ======================================================== */
 
   function animate(
     elapsedTime
   ) {
+
+    /* ------------------------------------------------------
+       Gentle band motion
+       ------------------------------------------------------ */
+
     cisternaGroups.forEach(
       (
         layerGroup,
@@ -841,40 +904,105 @@ export function createGolgi() {
           layerGroup.userData
             .phase;
 
+
         layerGroup.position.y =
           layerGroup.userData
             .baseY +
           Math.sin(
             elapsedTime *
-              0.24 +
+              0.22 +
             phase
           ) *
-            0.007;
+            0.006;
 
-        layerGroup.position.z =
-          layerGroup.userData
-            .baseZ +
-          Math.cos(
-            elapsedTime *
-              0.2 +
-            phase
-          ) *
-            0.005;
 
         layerGroup.rotation.z =
           layerGroup.userData
             .baseRotationZ +
           Math.sin(
             elapsedTime *
-              0.21 +
+              0.18 +
             phase +
             index * 0.12
           ) *
-            0.005;
+            0.004;
+
+
+        layerGroup.rotation.y =
+          layerGroup.userData
+            .baseRotationY +
+          Math.cos(
+            elapsedTime *
+              0.15 +
+            phase
+          ) *
+            0.003;
       }
     );
 
-    vesicles.forEach(
+
+    /* ------------------------------------------------------
+       Cluster floating
+       ------------------------------------------------------ */
+
+    vesicleClusters.forEach(
+      (
+        cluster,
+        index
+      ) => {
+        const base =
+          cluster.userData
+            .basePosition;
+
+
+        const phase =
+          cluster.userData
+            .phase;
+
+
+        cluster.position.set(
+          base.x +
+            Math.sin(
+              elapsedTime *
+                0.4 +
+              phase
+            ) *
+              0.016,
+
+          base.y +
+            Math.cos(
+              elapsedTime *
+                0.34 +
+              phase
+            ) *
+              0.013,
+
+          base.z +
+            Math.sin(
+              elapsedTime *
+                0.46 +
+              phase +
+              index * 0.2
+            ) *
+              0.011
+        );
+
+
+        cluster.rotation.y =
+          elapsedTime *
+          (
+            0.04 +
+            index * 0.003
+          );
+      }
+    );
+
+
+    /* ------------------------------------------------------
+       Individual vesicle jitter within each cluster
+       ------------------------------------------------------ */
+
+    allVesicles.forEach(
       (
         vesicle,
         index
@@ -883,108 +1011,71 @@ export function createGolgi() {
           vesicle.userData
             .basePosition;
 
+
         const phase =
           vesicle.userData
             .phase;
+
 
         vesicle.position.set(
           base.x +
             Math.sin(
               elapsedTime *
-                0.42 +
+                0.7 +
               phase
             ) *
-              0.018,
+              0.008,
 
           base.y +
             Math.cos(
-              elapsedTime *
-                0.36 +
-              phase
-            ) *
-              0.014,
-
-          base.z +
-            Math.sin(
-              elapsedTime *
-                0.48 +
-              phase +
-              index * 0.2
-            ) *
-              0.012
-        );
-
-        vesicle.rotation.y =
-          elapsedTime *
-          (
-            0.05 +
-            index * 0.004
-          );
-      }
-    );
-
-    cargoParticles.forEach(
-      (
-        cargo,
-        index
-      ) => {
-        const base =
-          cargo.userData
-            .basePosition;
-
-        const phase =
-          cargo.userData
-            .phase;
-
-        cargo.position.set(
-          base.x +
-            Math.sin(
-              elapsedTime *
-                0.75 +
-              phase
-            ) *
-              0.005,
-
-          base.y +
-            Math.cos(
-              elapsedTime *
-                0.68 +
-              phase
-            ) *
-              0.005,
-
-          base.z +
-            Math.sin(
               elapsedTime *
                 0.62 +
+              phase
+            ) *
+              0.008,
+
+          base.z +
+            Math.sin(
+              elapsedTime *
+                0.58 +
               phase +
               index * 0.05
             ) *
-              0.004
+              0.006
         );
 
+
         const pulse =
-          0.88 +
+          0.9 +
           Math.sin(
             elapsedTime *
-              1.1 +
+              1.05 +
             phase
           ) *
-            0.09;
+            0.08;
 
-        cargo.scale.setScalar(
+
+        vesicle.scale.setScalar(
           pulse
         );
       }
     );
   }
 
+
+  /* ========================================================
+     Return API
+
+     Kept compatible with your existing cell.js
+     (cargoParticles is now the flattened vesicle list).
+     ======================================================== */
+
   return {
     group,
     cisternae,
     cisternaGroups,
-    vesicles,
-    cargoParticles,
+    vesicles: vesicleClusters,
+    cargoParticles: allVesicles,
     animate,
   };
 }

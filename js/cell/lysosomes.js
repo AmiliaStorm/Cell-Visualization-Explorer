@@ -15,6 +15,7 @@ function pseudoRandom(seed) {
     Math.floor(value);
 }
 
+
 function randomBetween(
   seed,
   minimum,
@@ -26,6 +27,7 @@ function randomBetween(
     pseudoRandom(seed)
   );
 }
+
 
 /* ==========================================================
    Slightly deform spherical geometry
@@ -48,6 +50,7 @@ function deformGeometry(
   const direction =
     new THREE.Vector3();
 
+
   for (
     let index = 0;
     index < position.count;
@@ -58,16 +61,20 @@ function deformGeometry(
       index
     );
 
+
     direction
       .copy(vertex)
       .normalize();
+
 
     const waveOne =
       Math.sin(
         direction.x * 4.1 +
         direction.y * 3.2 +
         seed
-      ) * strength;
+      ) *
+      strength;
+
 
     const waveTwo =
       Math.cos(
@@ -78,10 +85,13 @@ function deformGeometry(
       strength *
       0.55;
 
+
     vertex.addScaledVector(
       direction,
-      waveOne + waveTwo
+      waveOne +
+      waveTwo
     );
+
 
     position.setXYZ(
       index,
@@ -91,13 +101,19 @@ function deformGeometry(
     );
   }
 
-  position.needsUpdate = true;
+
+  position.needsUpdate =
+    true;
+
 
   geometry.computeVertexNormals();
+
   geometry.computeBoundingSphere();
+
 
   return geometry;
 }
+
 
 /* ==========================================================
    Create one lysosome
@@ -109,14 +125,18 @@ function createLysosome(
   const group =
     new THREE.Group();
 
+
   group.name =
     "lysosome";
+
 
   group.userData.type =
     "lysosome";
 
+
   group.userData.organelleId =
     "lysosome";
+
 
   group.userData.info = {
     title:
@@ -136,71 +156,96 @@ function createLysosome(
     ],
   };
 
+
   /* ========================================================
      Materials
      ======================================================== */
 
   const membraneMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0xb54b9d,
+      color: 0xc94daf,
 
       transparent: true,
-      opacity: 0.42,
+      opacity: 0.48,
 
-      roughness: 0.24,
+      roughness: 0.18,
       metalness: 0,
 
-      transmission: 0,
-      thickness: 0.1,
+      transmission: 0.06,
+      thickness: 0.12,
 
-      clearcoat: 0.7,
-      clearcoatRoughness: 0.2,
+      clearcoat: 0.82,
+      clearcoatRoughness: 0.14,
 
-      emissive: 0x4d123f,
-      emissiveIntensity: 0.3,
+      emissive:
+        0x64144f,
 
-      side: THREE.DoubleSide,
+      emissiveIntensity:
+        0.42,
+
+      side:
+        THREE.DoubleSide,
 
       depthWrite: false,
       depthTest: true,
     });
 
+
   const lumenMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0x5d174f,
+    new THREE.MeshPhysicalMaterial({
+      color: 0x68195c,
 
       transparent: true,
-      opacity: 0.34,
+      opacity: 0.28,
 
-      roughness: 0.52,
+      roughness: 0.34,
+      metalness: 0,
 
-      emissive: 0x300926,
-      emissiveIntensity: 0.28,
+      transmission: 0,
+
+      clearcoat: 0.25,
+      clearcoatRoughness: 0.3,
+
+      emissive:
+        0x3c0b34,
+
+      emissiveIntensity:
+        0.34,
 
       depthWrite: false,
+      depthTest: true,
     });
+
 
   const enzymeMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0xf096d8,
+      color: 0xffa4e6,
 
-      emissive: 0xb42d8f,
-      emissiveIntensity: 0.75,
+      emissive:
+        0xd83db0,
 
-      roughness: 0.32,
+      emissiveIntensity:
+        1.0,
+
+      roughness: 0.24,
       metalness: 0,
     });
+
 
   const cargoMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0xffc45c,
+      color: 0xffcf69,
 
-      emissive: 0xb85d0d,
-      emissiveIntensity: 0.5,
+      emissive:
+        0xd97a12,
 
-      roughness: 0.38,
+      emissiveIntensity:
+        0.72,
+
+      roughness: 0.3,
       metalness: 0,
     });
+
 
   /* ========================================================
      Outer membrane
@@ -213,6 +258,7 @@ function createLysosome(
       0.19
     );
 
+
   const membraneGeometry =
     deformGeometry(
       new THREE.SphereGeometry(
@@ -220,9 +266,12 @@ function createLysosome(
         40,
         40
       ),
+
       seed,
+
       radius * 0.08
     );
+
 
   const membrane =
     new THREE.Mesh(
@@ -230,8 +279,19 @@ function createLysosome(
       membraneMaterial
     );
 
-  membrane.castShadow = true;
-  membrane.renderOrder = 5;
+
+  membrane.castShadow =
+    true;
+
+
+  membrane.renderOrder =
+    5;
+
+
+  /*
+   * Tiny differences in proportion make individual
+   * lysosomes look slightly different from each other.
+   */
 
   membrane.scale.set(
     randomBetween(
@@ -242,7 +302,7 @@ function createLysosome(
 
     randomBetween(
       seed + 3,
-      0.9,
+      0.90,
       1.06
     ),
 
@@ -252,6 +312,7 @@ function createLysosome(
       1.08
     )
   );
+
 
   /* ========================================================
      Acidic lumen
@@ -264,12 +325,19 @@ function createLysosome(
         32,
         32
       ),
+
       lumenMaterial
     );
+
 
   lumen.scale.copy(
     membrane.scale
   );
+
+
+  lumen.renderOrder =
+    2;
+
 
   /* ========================================================
      Hydrolytic enzyme particles
@@ -278,7 +346,9 @@ function createLysosome(
   const enzymeGroup =
     new THREE.Group();
 
+
   const enzymes = [];
+
 
   const enzymeCount =
     Math.floor(
@@ -288,6 +358,7 @@ function createLysosome(
         14
       )
     );
+
 
   for (
     let index = 0;
@@ -300,14 +371,18 @@ function createLysosome(
           randomBetween(
             seed * 40 +
               index,
-            0.012,
-            0.022
+
+            0.014,
+            0.025
           ),
-          9,
-          9
+
+          10,
+          10
         ),
+
         enzymeMaterial
       );
+
 
     const direction =
       new THREE.Vector3(
@@ -315,6 +390,7 @@ function createLysosome(
           seed * 50 +
             index * 3 +
             1,
+
           -1,
           1
         ),
@@ -323,6 +399,7 @@ function createLysosome(
           seed * 50 +
             index * 3 +
             2,
+
           -1,
           1
         ),
@@ -331,10 +408,12 @@ function createLysosome(
           seed * 50 +
             index * 3 +
             3,
+
           -1,
           1
         )
       );
+
 
     if (
       direction.lengthSq() <
@@ -347,15 +426,20 @@ function createLysosome(
       );
     }
 
+
     direction.normalize();
+
 
     const distance =
       randomBetween(
         seed * 70 +
           index,
+
         0.025,
+
         radius * 0.58
       );
+
 
     particle.position.copy(
       direction.multiplyScalar(
@@ -363,47 +447,71 @@ function createLysosome(
       )
     );
 
+
     particle.userData.basePosition =
       particle.position.clone();
+
 
     particle.userData.phase =
       randomBetween(
         seed * 90 +
           index,
+
         0,
+
         Math.PI * 2
       );
+
 
     particle.userData.speed =
       randomBetween(
         seed * 110 +
           index,
+
         0.32,
+
         0.72
       );
+
+
+    particle.castShadow =
+      false;
+
+
+    particle.renderOrder =
+      4;
+
 
     enzymeGroup.add(
       particle
     );
+
 
     enzymes.push(
       particle
     );
   }
 
+
   /* ========================================================
      Small degradative cargo fragments
+
+     Golden fragments represent material being processed
+     within the lysosome.
      ======================================================== */
 
   const cargoGroup =
     new THREE.Group();
 
+
   const cargoFragments = [];
+
 
   const cargoCount =
     seed % 2 === 0
       ? 3
       : 2;
+
 
   for (
     let index = 0;
@@ -416,20 +524,26 @@ function createLysosome(
           randomBetween(
             seed * 130 +
               index,
+
             0.018,
             0.032
           ),
+
           0
         ),
+
         cargoMaterial
       );
+
 
     cargo.position.set(
       randomBetween(
         seed * 150 +
           index * 3 +
           1,
+
         -radius * 0.38,
+
         radius * 0.38
       ),
 
@@ -437,7 +551,9 @@ function createLysosome(
         seed * 150 +
           index * 3 +
           2,
+
         -radius * 0.38,
+
         radius * 0.38
       ),
 
@@ -445,30 +561,97 @@ function createLysosome(
         seed * 150 +
           index * 3 +
           3,
+
         -radius * 0.38,
+
         radius * 0.38
       )
     );
 
+
     cargo.userData.basePosition =
       cargo.position.clone();
+
 
     cargo.userData.phase =
       randomBetween(
         seed * 170 +
           index,
+
         0,
+
         Math.PI * 2
       );
+
+
+    cargo.renderOrder =
+      4;
+
 
     cargoGroup.add(
       cargo
     );
 
+
     cargoFragments.push(
       cargo
     );
   }
+
+
+  /* ========================================================
+     Soft inner highlight
+
+     Adds a subtle glow near the front surface so lysosomes
+     read as translucent, glossy compartments.
+     ======================================================== */
+
+  const highlightMaterial =
+    new THREE.MeshBasicMaterial({
+      color: 0xff8fe0,
+
+      transparent: true,
+
+      opacity: 0.055,
+
+      blending:
+        THREE.AdditiveBlending,
+
+      side:
+        THREE.FrontSide,
+
+      depthWrite: false,
+      depthTest: true,
+    });
+
+
+  const highlight =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        radius * 0.94,
+        28,
+        28
+      ),
+
+      highlightMaterial
+    );
+
+
+  highlight.scale.copy(
+    membrane.scale
+  );
+
+
+  highlight.position.set(
+    -radius * 0.08,
+    radius * 0.10,
+    radius * 0.12
+  );
+
+
+  highlight.renderOrder =
+    6;
+
 
   /* ========================================================
      Assemble lysosome
@@ -478,33 +661,48 @@ function createLysosome(
     lumen,
     enzymeGroup,
     cargoGroup,
-    membrane
+    membrane,
+    highlight
   );
+
 
   group.userData.membrane =
     membrane;
 
+
   group.userData.lumen =
     lumen;
+
 
   group.userData.enzymes =
     enzymes;
 
+
   group.userData.cargoFragments =
     cargoFragments;
+
+
+  group.userData.highlight =
+    highlight;
+
 
   group.userData.phase =
     randomBetween(
       seed * 200,
+
       0,
+
       Math.PI * 2
     );
+
 
   group.userData.baseRotation =
     group.rotation.clone();
 
+
   return group;
 }
+
 
 /* ==========================================================
    Create all lysosomes
@@ -519,6 +717,11 @@ export function createLysosomes() {
     createLysosome(7.4),
   ];
 
+
+  /* ========================================================
+     Animation
+     ======================================================== */
+
   lysosomes.animate =
     function animate(
       elapsedTime
@@ -532,31 +735,37 @@ export function createLysosomes() {
             lysosome.userData
               .phase;
 
-          /*
-           * Preserve the scale assigned in layout.js.
-           */
+
+          /* ------------------------------------------------
+             Preserve scale assigned in layout.js
+             ------------------------------------------------ */
+
           const layoutScale =
             lysosome.userData
               .layoutScale ??
             lysosome.scale.x;
+
 
           const pulse =
             1 +
             Math.sin(
               elapsedTime *
                 0.5 +
-                phase
+              phase
             ) *
               0.018;
 
+
           lysosome.scale.setScalar(
             layoutScale *
-              pulse
+            pulse
           );
 
-          /*
-           * Subtle whole-organelle rotation.
-           */
+
+          /* ------------------------------------------------
+             Very subtle whole-organelle rotation
+             ------------------------------------------------ */
+
           lysosome.rotation.y +=
             0.00012 *
             (
@@ -565,104 +774,163 @@ export function createLysosomes() {
                 : -1
             );
 
-          lysosome.userData.enzymes.forEach(
-            (enzyme) => {
-              const base =
-                enzyme.userData
-                  .basePosition;
 
-              const enzymePhase =
-                enzyme.userData
-                  .phase;
+          lysosome.rotation.x +=
+            0.000025 *
+            (
+              index % 2 === 0
+                ? -1
+                : 1
+            );
 
-              const speed =
-                enzyme.userData
-                  .speed;
 
-              enzyme.position.set(
-                base.x +
-                  Math.sin(
-                    elapsedTime *
-                      speed +
+          /* ------------------------------------------------
+             Enzyme movement
+             ------------------------------------------------ */
+
+          lysosome.userData
+            .enzymes
+            .forEach(
+              (
+                enzyme
+              ) => {
+                const base =
+                  enzyme.userData
+                    .basePosition;
+
+
+                const enzymePhase =
+                  enzyme.userData
+                    .phase;
+
+
+                const speed =
+                  enzyme.userData
+                    .speed;
+
+
+                enzyme.position.set(
+                  base.x +
+                    Math.sin(
+                      elapsedTime *
+                        speed +
                       enzymePhase
-                  ) *
-                    0.008,
+                    ) *
+                      0.008,
 
-                base.y +
-                  Math.cos(
-                    elapsedTime *
-                      speed +
+                  base.y +
+                    Math.cos(
+                      elapsedTime *
+                        speed +
                       enzymePhase
-                  ) *
-                    0.008,
+                    ) *
+                      0.008,
 
-                base.z +
-                  Math.sin(
-                    elapsedTime *
-                      0.55 +
+                  base.z +
+                    Math.sin(
+                      elapsedTime *
+                        0.55 +
                       enzymePhase
-                  ) *
-                    0.007
-              );
+                    ) *
+                      0.007
+                );
 
-              enzyme.scale.setScalar(
-                0.86 +
+
+                enzyme.scale.setScalar(
+                  0.88 +
                   Math.sin(
                     elapsedTime *
                       1.1 +
-                      enzymePhase
+                    enzymePhase
                   ) *
-                    0.1
-              );
-            }
-          );
+                    0.10
+                );
+              }
+            );
 
-          lysosome.userData.cargoFragments.forEach(
-            (cargo) => {
-              const base =
-                cargo.userData
-                  .basePosition;
 
-              const cargoPhase =
-                cargo.userData
-                  .phase;
+          /* ------------------------------------------------
+             Cargo movement
+             ------------------------------------------------ */
 
-              cargo.position.set(
-                base.x +
-                  Math.sin(
-                    elapsedTime *
-                      0.3 +
+          lysosome.userData
+            .cargoFragments
+            .forEach(
+              (
+                cargo
+              ) => {
+                const base =
+                  cargo.userData
+                    .basePosition;
+
+
+                const cargoPhase =
+                  cargo.userData
+                    .phase;
+
+
+                cargo.position.set(
+                  base.x +
+                    Math.sin(
+                      elapsedTime *
+                        0.30 +
                       cargoPhase
-                  ) *
-                    0.006,
+                    ) *
+                      0.006,
 
-                base.y +
-                  Math.cos(
-                    elapsedTime *
-                      0.34 +
+                  base.y +
+                    Math.cos(
+                      elapsedTime *
+                        0.34 +
                       cargoPhase
-                  ) *
-                    0.006,
+                    ) *
+                      0.006,
 
-                base.z +
-                  Math.sin(
-                    elapsedTime *
-                      0.28 +
+                  base.z +
+                    Math.sin(
+                      elapsedTime *
+                        0.28 +
                       cargoPhase
-                  ) *
-                    0.005
-              );
+                    ) *
+                      0.005
+                );
 
-              cargo.rotation.x +=
-                0.001;
 
-              cargo.rotation.y +=
-                0.0014;
-            }
-          );
+                cargo.rotation.x +=
+                  0.001;
+
+
+                cargo.rotation.y +=
+                  0.0014;
+              }
+            );
+
+
+          /* ------------------------------------------------
+             Tiny highlight shimmer
+             ------------------------------------------------ */
+
+          const highlight =
+            lysosome.userData
+              .highlight;
+
+
+          if (
+            highlight?.material
+          ) {
+            highlight.material.opacity =
+              0.048 +
+              Math.sin(
+                elapsedTime *
+                  0.42 +
+                phase
+              ) *
+                0.012;
+          }
         }
       );
     };
+
 
   return lysosomes;
 }

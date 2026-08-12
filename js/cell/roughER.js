@@ -3,7 +3,7 @@ import * as THREE from "three";
 /* ==========================================================
    Deterministic pseudo-random helpers
 
-   Keep the rough ER identical after every refresh.
+   Keeps the rough ER identical after every refresh.
    ========================================================== */
 
 function pseudoRandom(seed) {
@@ -27,61 +27,237 @@ function randomBetween(
   );
 }
 
+
 /* ==========================================================
-   Evaluate one point on an ER membrane sheet
+   Create organic horseshoe-style control points
+
+   Instead of perfect concentric circles, each cisterna gets
+   its own irregular path around the nucleus.
    ========================================================== */
 
-function getPointOnSheet({
-  sheetData,
-  angleProgress,
+function createOrganicArcPoints({
+  index,
+  radiusX,
+  radiusY,
+  startAngle,
+  endAngle,
+  xOffset = 0,
+  yOffset = 0,
+  zOffset = 0,
+  pointCount = 9,
+}) {
+  const points = [];
+
+  for (
+    let pointIndex = 0;
+    pointIndex < pointCount;
+    pointIndex += 1
+  ) {
+    const progress =
+      pointIndex /
+      (pointCount - 1);
+
+    const angle =
+      THREE.MathUtils.lerp(
+        startAngle,
+        endAngle,
+        progress
+      );
+
+    const seed =
+      index * 100 +
+      pointIndex * 17;
+
+    /* Large irregular fold */
+
+    const radialWave =
+      Math.sin(
+        progress *
+          Math.PI *
+          2.35 +
+        index * 0.72
+      ) *
+      (
+        0.055 +
+        index * 0.002
+      );
+
+    /* Smaller local membrane variation */
+
+    const randomWave =
+      randomBetween(
+        seed + 1,
+        -0.045,
+        0.045
+      );
+
+    const effectiveRadiusX =
+      radiusX +
+      radialWave +
+      randomWave;
+
+    const effectiveRadiusY =
+      radiusY +
+      radialWave * 0.65 +
+      randomBetween(
+        seed + 2,
+        -0.025,
+        0.025
+      );
+
+    let x =
+      Math.cos(angle) *
+        effectiveRadiusX +
+      xOffset;
+
+    let y =
+      Math.sin(angle) *
+        effectiveRadiusY +
+      yOffset;
+
+    /*
+     * Uneven lateral folding.
+     * This breaks the "perfect ring" appearance further.
+     */
+
+    x +=
+      Math.sin(
+        progress * Math.PI * 4 +
+        index
+      ) *
+      0.035;
+
+    y +=
+      Math.sin(
+        progress * Math.PI * 3.1 +
+        index * 0.58
+      ) *
+      0.028;
+
+    /*
+     * Give the membrane some depth.
+     */
+
+    const z =
+      zOffset +
+      Math.sin(
+        progress *
+          Math.PI *
+          2.6 +
+        index * 0.83
+      ) *
+        0.045 +
+      Math.cos(
+        progress *
+          Math.PI *
+          5.2 +
+        index
+      ) *
+        0.016;
+
+    points.push(
+      new THREE.Vector3(
+        x,
+        y,
+        z
+      )
+    );
+  }
+
+  return points;
+}
+
+
+/* ==========================================================
+   Sample a point across one cisterna
+
+   widthProgress:
+   0 = one membrane edge
+   1 = opposite edge
+   ========================================================== */
+
+function getPointOnCisterna({
+  curve,
+  progress,
   widthProgress,
+  width,
+  phase = 0,
   surfaceOffset = 0,
 }) {
-  const {
-    startAngle,
-    endAngle,
-    innerRadius,
-    width,
-    yOffset,
-    zPosition,
-    verticalScale,
-    waveCount,
-    waveStrength,
-    largeFoldStrength,
-    verticalWave,
-    depthWave,
-    phase,
-  } = sheetData;
-
-  const angle =
-    THREE.MathUtils.lerp(
-      startAngle,
-      endAngle,
-      angleProgress
+  const center =
+    curve.getPointAt(
+      progress
     );
 
+  const tangent =
+    curve
+      .getTangentAt(
+        progress
+      )
+      .normalize();
+
   /*
-   * Tapers the membrane near both open ends.
+   * Perpendicular direction within XY plane.
    */
-  const endTaper =
+
+  const lateral =
+    new THREE.Vector3(
+      -tangent.y,
+      tangent.x,
+      0
+    ).normalize();
+
+  /*
+   * Taper near open membrane ends.
+   */
+
+  const taper =
+    0.48 +
     Math.pow(
       Math.sin(
-        angleProgress *
+        progress *
         Math.PI
       ),
-      0.42
-    );
+      0.55
+    ) *
+      0.52;
 
   /*
-   * Gives the ribbon a slightly swollen
-   * centre and narrower ends.
+   * Slightly different width across the membrane.
    */
-  const taperedWidth =
+
+  const localWidth =
     width *
+    taper *
     (
-      0.72 +
-      endTaper * 0.28
+      1 +
+      Math.sin(
+        progress *
+          Math.PI *
+          3 +
+        phase
+      ) *
+        0.08
     );
+
+  const lateralDistance =
+    (
+      widthProgress -
+      0.5
+    ) *
+    localWidth;
+
+  const position =
+    center
+      .clone()
+      .addScaledVector(
+        lateral,
+        lateralDistance
+      );
+
+  /*
+   * Gentle bulge through the width of the cisterna.
+   */
 
   const crossSection =
     Math.sin(
@@ -89,113 +265,51 @@ function getPointOnSheet({
       Math.PI
     );
 
-  const smallFold =
-    Math.sin(
-      angle *
-        waveCount +
-      phase +
-      widthProgress *
-        1.6
-    ) *
-    waveStrength *
-    (
-      0.45 +
-      crossSection * 0.55
-    );
-
-  const largeFold =
-    Math.sin(
-      angle * 1.75 +
-      phase * 0.62
-    ) *
-    largeFoldStrength;
-
-  const secondaryFold =
-    Math.sin(
-      angle *
-        waveCount *
-        1.8 -
-      phase +
-      widthProgress *
-        Math.PI *
-        2
-    ) *
-    waveStrength *
-    0.2;
-
-  const radius =
-    innerRadius +
-    taperedWidth *
-      widthProgress +
-    smallFold +
-    largeFold +
-    secondaryFold;
-
-  const x =
-    Math.cos(angle) *
-    radius;
-
-  const y =
-    Math.sin(angle) *
-      radius *
-      verticalScale +
-    yOffset +
-    Math.sin(
-      angle * 2.15 +
-      phase
-    ) *
-      verticalWave;
-
-  /*
-   * A small depth variation stops the ER
-   * from looking like flat concentric rings.
-   */
-  const z =
-    zPosition +
-    Math.cos(
-      angle * 2.4 +
-      phase
-    ) *
-      depthWave +
+  position.z +=
     crossSection *
-      depthWave *
-      0.55 +
+      0.025 +
+    Math.sin(
+      progress *
+        Math.PI *
+        4.1 +
+      phase
+    ) *
+      crossSection *
+      0.012 +
     surfaceOffset;
 
   return {
-    position:
-      new THREE.Vector3(
-        x,
-        y,
-        z
-      ),
-
-    angle,
+    position,
+    tangent,
+    lateral,
   };
 }
 
+
 /* ==========================================================
-   Create the broad surface of one membrane sheet
+   Create broad cisterna surface
    ========================================================== */
 
 function createMembraneSurface({
-  sheetData,
+  curve,
+  width,
+  phase,
   material,
 }) {
-  const angleSegments = 104;
+  const lengthSegments = 90;
   const widthSegments = 8;
 
   const positions = [];
   const indices = [];
 
   for (
-    let angleIndex = 0;
-    angleIndex <= angleSegments;
-    angleIndex += 1
+    let lengthIndex = 0;
+    lengthIndex <= lengthSegments;
+    lengthIndex += 1
   ) {
-    const angleProgress =
-      angleIndex /
-      angleSegments;
+    const progress =
+      lengthIndex /
+      lengthSegments;
 
     for (
       let widthIndex = 0;
@@ -206,17 +320,19 @@ function createMembraneSurface({
         widthIndex /
         widthSegments;
 
-      const point =
-        getPointOnSheet({
-          sheetData,
-          angleProgress,
+      const sample =
+        getPointOnCisterna({
+          curve,
+          progress,
           widthProgress,
+          width,
+          phase,
         });
 
       positions.push(
-        point.position.x,
-        point.position.y,
-        point.position.z
+        sample.position.x,
+        sample.position.y,
+        sample.position.z
       );
     }
   }
@@ -225,9 +341,9 @@ function createMembraneSurface({
     widthSegments + 1;
 
   for (
-    let angleIndex = 0;
-    angleIndex < angleSegments;
-    angleIndex += 1
+    let lengthIndex = 0;
+    lengthIndex < lengthSegments;
+    lengthIndex += 1
   ) {
     for (
       let widthIndex = 0;
@@ -235,20 +351,22 @@ function createMembraneSurface({
       widthIndex += 1
     ) {
       const a =
-        angleIndex *
+        lengthIndex *
           rowLength +
         widthIndex;
 
-      const b = a + 1;
+      const b =
+        a + 1;
 
       const c =
         (
-          angleIndex + 1
+          lengthIndex + 1
         ) *
           rowLength +
         widthIndex;
 
-      const d = c + 1;
+      const d =
+        c + 1;
 
       indices.push(
         a,
@@ -288,57 +406,64 @@ function createMembraneSurface({
 
   surface.castShadow = true;
   surface.receiveShadow = true;
-  surface.renderOrder = 2;
 
-  surface.userData.sheetData =
-    sheetData;
+  surface.renderOrder = 2;
 
   return surface;
 }
 
+
 /* ==========================================================
-   Create one rounded edge around a membrane sheet
+   Rounded membrane edge
    ========================================================== */
 
 function createSheetEdge({
-  sheetData,
+  curve,
+  width,
+  phase,
   widthProgress,
   radius,
   material,
 }) {
   const points = [];
 
-  const segments = 84;
+  const segments = 82;
 
   for (
     let index = 0;
     index <= segments;
     index += 1
   ) {
-    const angleProgress =
-      index / segments;
+    const progress =
+      index /
+      segments;
 
-    const point =
-      getPointOnSheet({
-        sheetData,
-        angleProgress,
+    const sample =
+      getPointOnCisterna({
+        curve,
+        progress,
         widthProgress,
+        width,
+        phase,
       });
 
     points.push(
-      point.position
+      sample.position
     );
   }
 
-  const curve =
+  const edgeCurve =
     new THREE.CatmullRomCurve3(
-      points
+      points,
+      false,
+      "catmullrom",
+      0.45
     );
 
   const geometry =
     new THREE.TubeGeometry(
-      curve,
-      92,
+      edgeCurve,
+      88,
       radius,
       8,
       false
@@ -356,43 +481,72 @@ function createSheetEdge({
   return edge;
 }
 
+
 /* ==========================================================
-   Create one complete folded ER cisterna
+   Create complete rough-ER cisterna
    ========================================================== */
 
 function createCisterna({
-  sheetData,
+  configuration,
   surfaceMaterial,
   edgeMaterial,
 }) {
   const group =
     new THREE.Group();
 
+  const curve =
+    new THREE.CatmullRomCurve3(
+      configuration.points,
+      false,
+      "catmullrom",
+      0.45
+    );
+
   const surface =
     createMembraneSurface({
-      sheetData,
+      curve,
+      width:
+        configuration.width,
+
+      phase:
+        configuration.phase,
+
       material:
         surfaceMaterial,
     });
 
-  /*
-   * Inner and outer tubes provide visible
-   * rounded membrane thickness.
-   */
   const innerEdge =
     createSheetEdge({
-      sheetData,
+      curve,
+
+      width:
+        configuration.width,
+
+      phase:
+        configuration.phase,
+
       widthProgress: 0,
-      radius: 0.014,
+
+      radius: 0.018,
+
       material:
         edgeMaterial,
     });
 
   const outerEdge =
     createSheetEdge({
-      sheetData,
+      curve,
+
+      width:
+        configuration.width,
+
+      phase:
+        configuration.phase,
+
       widthProgress: 1,
-      radius: 0.018,
+
+      radius: 0.021,
+
       material:
         edgeMaterial,
     });
@@ -408,8 +562,10 @@ function createCisterna({
     surface,
     innerEdge,
     outerEdge,
+    curve,
   };
 }
+
 
 /* ==========================================================
    Create one ribosome
@@ -470,12 +626,14 @@ function createRibosome(
   return group;
 }
 
+
 /* ==========================================================
-   Attach ribosomes to one membrane sheet
+   Attach ribosomes
    ========================================================== */
 
-function attachRibosomesToSheet({
-  sheetData,
+function attachRibosomesToCisterna({
+  configuration,
+  curve,
   sheetIndex,
   count,
   material,
@@ -488,38 +646,41 @@ function attachRibosomesToSheet({
     index += 1
   ) {
     const seed =
-      sheetIndex * 200 +
-      index * 11;
+      sheetIndex * 300 +
+      index * 17;
 
     /*
-     * Keep ribosomes away from the cut ends
-     * and distribute them across the surface.
+     * Avoid the very ends.
      */
-    const angleProgress =
+
+    const progress =
       randomBetween(
         seed + 1,
-        0.055,
-        0.945
+        0.06,
+        0.94
       );
 
     const widthProgress =
       randomBetween(
         seed + 2,
-        0.12,
-        0.9
+        0.10,
+        0.90
       );
 
-    const point =
-      getPointOnSheet({
-        sheetData,
-        angleProgress,
+    const sample =
+      getPointOnCisterna({
+        curve,
+
+        progress,
         widthProgress,
 
-        /*
-         * Places the ribosome on the
-         * visible cytoplasmic surface.
-         */
-        surfaceOffset: 0.032,
+        width:
+          configuration.width,
+
+        phase:
+          configuration.phase,
+
+        surfaceOffset: 0.035,
       });
 
     const ribosome =
@@ -528,31 +689,40 @@ function attachRibosomesToSheet({
       );
 
     ribosome.position.copy(
-      point.position
+      sample.position
     );
+
+    /*
+     * Approximate alignment with the membrane path.
+     */
+
+    const tangentAngle =
+      Math.atan2(
+        sample.tangent.y,
+        sample.tangent.x
+      );
 
     ribosome.rotation.set(
       randomBetween(
         seed + 3,
-        -0.22,
-        0.22
+        -0.18,
+        0.18
       ),
 
       randomBetween(
         seed + 4,
-        0,
-        Math.PI * 2
+        -0.25,
+        0.25
       ),
 
-      point.angle +
-        Math.PI / 2
+      tangentAngle
     );
 
     const scale =
       randomBetween(
         seed + 5,
         0.82,
-        1.12
+        1.13
       );
 
     ribosome.scale.setScalar(
@@ -579,8 +749,9 @@ function attachRibosomesToSheet({
   }
 }
 
+
 /* ==========================================================
-   Rough endoplasmic reticulum
+   Rough Endoplasmic Reticulum
    ========================================================== */
 
 export function createRoughER() {
@@ -614,259 +785,551 @@ export function createRoughER() {
     ],
   };
 
+
   /* ========================================================
      Materials
      ======================================================== */
 
   const surfaceMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0x244f9f,
+      color: 0x174eae,
 
       transparent: true,
-      opacity: 0.9,
+      opacity: 0.93,
 
-      roughness: 0.34,
+      roughness: 0.28,
       metalness: 0,
 
       transmission: 0,
 
-      clearcoat: 0.48,
-      clearcoatRoughness: 0.28,
+      clearcoat: 0.58,
+      clearcoatRoughness: 0.21,
 
-      emissive: 0x061a4f,
-      emissiveIntensity: 0.24,
+      emissive: 0x061d62,
+      emissiveIntensity: 0.38,
 
-      side: THREE.DoubleSide,
+      side:
+        THREE.DoubleSide,
 
       depthWrite: true,
       depthTest: true,
     });
 
+
   const edgeMaterial =
-    new THREE.MeshStandardMaterial({
-      color: 0x3f71cc,
+    new THREE.MeshPhysicalMaterial({
+      color: 0x347bed,
 
-      emissive: 0x0a2e75,
-      emissiveIntensity: 0.34,
+      emissive: 0x0c3a99,
+      emissiveIntensity: 0.48,
 
-      roughness: 0.3,
+      roughness: 0.23,
       metalness: 0,
+
+      clearcoat: 0.45,
+      clearcoatRoughness: 0.22,
     });
+
 
   const ribosomeMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0xd9ad51,
+      color: 0xd5ad4f,
 
-      emissive: 0x5d3807,
-      emissiveIntensity: 0.32,
+      emissive: 0x674009,
+      emissiveIntensity: 0.38,
 
-      roughness: 0.42,
+      roughness: 0.38,
       metalness: 0,
     });
+
 
   const sheets = [];
   const sheetGroups = [];
   const ribosomes = [];
 
-  /* ========================================================
-     Concentric folded membrane sheets
 
-     The folds wrap around most of the nucleus but
-     leave an opening on the right toward the Golgi.
+  /* ========================================================
+     Organic cisternae
+
+     These are NOT perfect concentric rings.
+
+     Each membrane has:
+     - its own radius
+     - its own centre
+     - different open ends
+     - different depth
+     - different vertical compression
      ======================================================== */
 
-  const sheetCount = 11;
+  const cisternaDefinitions = [
+    {
+      radiusX: 1.02,
+      radiusY: 0.82,
 
-  for (
-    let index = 0;
-    index < sheetCount;
-    index += 1
-  ) {
-    const progress =
-      index /
-      (
-        sheetCount - 1
-      );
+      startAngle: 0.72,
+      endAngle: 5.48,
 
-    const distanceFromMiddle =
-      Math.abs(
-        progress - 0.5
-      ) * 2;
+      xOffset: -0.02,
+      yOffset: 0.01,
 
-    const phase =
-      index * 0.73;
+      zOffset: -0.08,
 
-    /*
-     * Each outer layer sits farther from the nucleus.
-     */
-    const innerRadius =
-      0.91 +
-      index * 0.105;
+      width: 0.19,
+    },
 
-    /*
-     * Central layers are broader, while the innermost
-     * and outermost layers are slightly narrower.
-     */
-    const width =
-      0.17 +
-      (
-        1 -
-        distanceFromMiddle
-      ) *
-        0.045;
+    {
+      radiusX: 1.14,
+      radiusY: 0.91,
 
-    /*
-     * A small stagger makes the open ends look naturally
-     * irregular rather than perfectly aligned.
-     */
-    const startAngle =
-      0.48 +
-      distanceFromMiddle *
-        0.08 +
-      Math.sin(
-        index * 1.21
-      ) *
-        0.045;
+      startAngle: 0.64,
+      endAngle: 5.38,
 
-    const endAngle =
-      5.82 -
-      distanceFromMiddle *
-        0.09 +
-      Math.cos(
-        index * 1.08
-      ) *
-        0.045;
+      xOffset: -0.07,
+      yOffset: 0.035,
 
-    const sheetData = {
-      startAngle,
-      endAngle,
-      innerRadius,
-      width,
+      zOffset: -0.105,
 
-      yOffset:
-        -0.035 +
+      width: 0.21,
+    },
+
+    {
+      radiusX: 1.27,
+      radiusY: 0.99,
+
+      startAngle: 0.74,
+      endAngle: 5.56,
+
+      xOffset: -0.11,
+      yOffset: -0.015,
+
+      zOffset: -0.13,
+
+      width: 0.22,
+    },
+
+    {
+      radiusX: 1.40,
+      radiusY: 1.06,
+
+      startAngle: 0.59,
+      endAngle: 5.34,
+
+      xOffset: -0.13,
+      yOffset: 0.025,
+
+      zOffset: -0.15,
+
+      width: 0.225,
+    },
+
+    {
+      radiusX: 1.53,
+      radiusY: 1.15,
+
+      startAngle: 0.70,
+      endAngle: 5.50,
+
+      xOffset: -0.17,
+      yOffset: -0.035,
+
+      zOffset: -0.17,
+
+      width: 0.22,
+    },
+
+    {
+      radiusX: 1.67,
+      radiusY: 1.22,
+
+      startAngle: 0.55,
+      endAngle: 5.28,
+
+      xOffset: -0.19,
+      yOffset: 0.015,
+
+      zOffset: -0.19,
+
+      width: 0.215,
+    },
+
+    {
+      radiusX: 1.80,
+      radiusY: 1.30,
+
+      startAngle: 0.67,
+      endAngle: 5.44,
+
+      xOffset: -0.23,
+      yOffset: -0.04,
+
+      zOffset: -0.21,
+
+      width: 0.20,
+    },
+
+    {
+      radiusX: 1.92,
+      radiusY: 1.37,
+
+      startAngle: 0.51,
+      endAngle: 5.20,
+
+      xOffset: -0.26,
+      yOffset: 0.035,
+
+      zOffset: -0.23,
+
+      width: 0.185,
+    },
+  ];
+
+
+  cisternaDefinitions.forEach(
+    (
+      definition,
+      index
+    ) => {
+      const phase =
+        index * 0.79;
+
+      const points =
+        createOrganicArcPoints({
+          index,
+
+          radiusX:
+            definition.radiusX,
+
+          radiusY:
+            definition.radiusY,
+
+          startAngle:
+            definition.startAngle,
+
+          endAngle:
+            definition.endAngle,
+
+          xOffset:
+            definition.xOffset,
+
+          yOffset:
+            definition.yOffset,
+
+          zOffset:
+            definition.zOffset,
+
+          pointCount:
+            9 +
+            (index % 2),
+        });
+
+
+      const configuration = {
+        ...definition,
+        phase,
+        points,
+      };
+
+
+      const cisterna =
+        createCisterna({
+          configuration,
+          surfaceMaterial,
+          edgeMaterial,
+        });
+
+
+      const layerGroup =
+        cisterna.group;
+
+
+      /* ------------------------------------------------------
+         Tiny unique angle for every membrane.
+         ------------------------------------------------------ */
+
+      layerGroup.rotation.z =
         Math.sin(
-          index * 0.82
+          index * 1.17
         ) *
-          0.025,
+        0.026;
+
+
+      layerGroup.rotation.x =
+        Math.sin(
+          index * 0.73
+        ) *
+        0.018;
+
+
+      layerGroup.userData.phase =
+        phase;
+
+
+      layerGroup.userData.baseRotationZ =
+        layerGroup.rotation.z;
+
+
+      layerGroup.userData.baseRotationX =
+        layerGroup.rotation.x;
+
+
+      layerGroup.userData.basePositionZ =
+        0;
+
 
       /*
-       * Keep the ER just behind the nucleus.
+       * Dense ribosome population.
        */
-      zPosition:
-        -0.17 -
-        progress * 0.035,
 
-      verticalScale:
-        0.76 +
-        Math.sin(
-          index * 0.55
-        ) *
-          0.018,
-
-      waveCount:
-        5.4 +
+      const ribosomeCount =
+        18 +
         (
-          index % 3
+          index % 4
         ) *
-          0.55,
+          2;
 
-      waveStrength:
-        0.027 +
-        (
-          index % 2
-        ) *
-          0.009,
 
-      largeFoldStrength:
-        0.028 +
-        (
-          index % 3
-        ) *
-          0.006,
+      attachRibosomesToCisterna({
+        configuration,
 
-      verticalWave:
-        0.012 +
-        (
-          index % 2
-        ) *
-          0.007,
+        curve:
+          cisterna.curve,
 
-      depthWave:
-        0.014 +
-        (
-          index % 3
-        ) *
-          0.004,
+        sheetIndex:
+          index,
 
-      phase,
-    };
+        count:
+          ribosomeCount,
 
-    const cisterna =
-      createCisterna({
-        sheetData,
-        surfaceMaterial,
-        edgeMaterial,
+        material:
+          ribosomeMaterial,
+
+        parent:
+          layerGroup,
+
+        collection:
+          ribosomes,
       });
 
-    const layerGroup =
-      cisterna.group;
 
-    layerGroup.userData.phase =
-      phase;
-
-    layerGroup.userData.baseRotationZ =
-      Math.sin(
-        index * 0.68
-      ) * 0.018;
-
-    layerGroup.userData.basePositionZ =
-      0;
-
-    layerGroup.rotation.z =
-      layerGroup.userData
-        .baseRotationZ;
-
-    /*
-     * Dense ribosome coverage similar to the
-     * rough ER in the target design.
-     */
-    const ribosomeCount =
-      16 +
-      (
-        index % 5
+      group.add(
+        layerGroup
       );
 
-    attachRibosomesToSheet({
-      sheetData,
-      sheetIndex:
-        index,
 
-      count:
-        ribosomeCount,
+      sheets.push(
+        cisterna.surface
+      );
 
-      material:
-        ribosomeMaterial,
 
-      parent:
-        layerGroup,
+      sheetGroups.push(
+        layerGroup
+      );
+    }
+  );
 
-      collection:
-        ribosomes,
-    });
 
-    group.add(
-      layerGroup
-    );
+  /* ========================================================
+     A few shorter side folds
 
-    sheets.push(
-      cisterna.surface
-    );
+     These prevent the entire rough ER from reading as one
+     giant horseshoe and make it feel like a true membrane
+     network.
+     ======================================================== */
 
-    sheetGroups.push(
-      layerGroup
-    );
-  }
+  const sideFoldDefinitions = [
+    {
+      points: [
+        new THREE.Vector3(
+          -1.50,
+          0.90,
+          -0.12
+        ),
+
+        new THREE.Vector3(
+          -1.80,
+          0.74,
+          -0.14
+        ),
+
+        new THREE.Vector3(
+          -1.94,
+          0.42,
+          -0.16
+        ),
+
+        new THREE.Vector3(
+          -1.88,
+          0.12,
+          -0.18
+        ),
+      ],
+
+      width: 0.18,
+    },
+
+    {
+      points: [
+        new THREE.Vector3(
+          -1.78,
+          -0.10,
+          -0.17
+        ),
+
+        new THREE.Vector3(
+          -1.90,
+          -0.39,
+          -0.19
+        ),
+
+        new THREE.Vector3(
+          -1.72,
+          -0.72,
+          -0.21
+        ),
+
+        new THREE.Vector3(
+          -1.43,
+          -0.90,
+          -0.20
+        ),
+      ],
+
+      width: 0.175,
+    },
+
+    {
+      points: [
+        new THREE.Vector3(
+          -0.85,
+          -1.20,
+          -0.18
+        ),
+
+        new THREE.Vector3(
+          -0.48,
+          -1.38,
+          -0.20
+        ),
+
+        new THREE.Vector3(
+          -0.05,
+          -1.42,
+          -0.18
+        ),
+
+        new THREE.Vector3(
+          0.34,
+          -1.28,
+          -0.16
+        ),
+      ],
+
+      width: 0.17,
+    },
+  ];
+
+
+  sideFoldDefinitions.forEach(
+    (
+      definition,
+      sideIndex
+    ) => {
+      const index =
+        cisternaDefinitions.length +
+        sideIndex;
+
+      const phase =
+        index * 0.79;
+
+      const configuration = {
+        ...definition,
+        phase,
+      };
+
+
+      const cisterna =
+        createCisterna({
+          configuration,
+          surfaceMaterial,
+          edgeMaterial,
+        });
+
+
+      const layerGroup =
+        cisterna.group;
+
+
+      layerGroup.userData.phase =
+        phase;
+
+
+      layerGroup.userData.baseRotationZ =
+        Math.sin(
+          index * 0.91
+        ) *
+        0.022;
+
+
+      layerGroup.userData.baseRotationX =
+        Math.cos(
+          index * 0.68
+        ) *
+        0.014;
+
+
+      layerGroup.rotation.z =
+        layerGroup.userData
+          .baseRotationZ;
+
+
+      layerGroup.rotation.x =
+        layerGroup.userData
+          .baseRotationX;
+
+
+      layerGroup.userData.basePositionZ =
+        0;
+
+
+      attachRibosomesToCisterna({
+        configuration,
+
+        curve:
+          cisterna.curve,
+
+        sheetIndex:
+          index,
+
+        count:
+          12,
+
+        material:
+          ribosomeMaterial,
+
+        parent:
+          layerGroup,
+
+        collection:
+          ribosomes,
+      });
+
+
+      group.add(
+        layerGroup
+      );
+
+
+      sheets.push(
+        cisterna.surface
+      );
+
+
+      sheetGroups.push(
+        layerGroup
+      );
+    }
+  );
+
 
   /* ========================================================
      Animation
@@ -884,35 +1347,51 @@ export function createRoughER() {
           layerGroup.userData
             .phase;
 
+
         /*
-         * Extremely gentle membrane motion.
-         * The ER should feel alive without wobbling.
+         * Extremely subtle membrane motion.
          */
+
         layerGroup.rotation.z =
           layerGroup.userData
             .baseRotationZ +
           Math.sin(
             elapsedTime *
-              0.14 +
+              0.13 +
             phase +
-            index * 0.1
+            index * 0.08
           ) *
-            0.0035;
+            0.0027;
+
+
+        layerGroup.rotation.x =
+          layerGroup.userData
+            .baseRotationX +
+          Math.sin(
+            elapsedTime *
+              0.11 +
+            phase
+          ) *
+            0.0018;
+
 
         layerGroup.position.z =
           layerGroup.userData
             .basePositionZ +
           Math.sin(
             elapsedTime *
-              0.17 +
+              0.15 +
             phase
           ) *
-            0.0025;
+            0.0022;
       }
     );
 
+
     ribosomes.forEach(
-      (ribosome) => {
+      (
+        ribosome
+      ) => {
         const pulse =
           ribosome.userData
             .baseScale +
@@ -924,12 +1403,21 @@ export function createRoughER() {
           ) *
             0.008;
 
+
         ribosome.scale.setScalar(
           pulse
         );
       }
     );
   }
+
+
+  /* ========================================================
+     Return API
+
+     Same structure as the previous roughER.js so cell.js
+     should not need to change.
+     ======================================================== */
 
   return {
     group,

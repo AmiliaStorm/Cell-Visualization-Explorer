@@ -16,12 +16,18 @@ export function createControls(camera, canvas) {
   controls.minDistance = 1;
 
   /*
-   * Practically unlimited zoom out.
+   * Keep the cell from shrinking into the void.
    */
-  controls.maxDistance = 1000;
+  controls.maxDistance = 16;
 
   controls.zoomSpeed = 1.5;
   controls.rotateSpeed = 0.6;
+
+  /*
+   * Orbit around the nucleus-weighted focal point,
+   * matching the camera's initial lookAt in scene.js.
+   */
+  controls.target.set(-0.3, 0, 0);
 
   controls.update();
 
