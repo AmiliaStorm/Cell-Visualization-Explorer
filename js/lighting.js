@@ -31,8 +31,8 @@ export function addLighting(scene) {
   const hemisphereLight =
     new THREE.HemisphereLight(
       0x8ecfff,
-      0x070914,
-      0.48
+      0x0d1a28,
+      0.62
     );
 
   /* --------------------------------------------------------
