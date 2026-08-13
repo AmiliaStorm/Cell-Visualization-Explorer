@@ -481,81 +481,109 @@ export function createGolgi() {
   /* ========================================================
      Curved cisterna stack
 
-     Six curved, tube-like bands arranged as a stack,
-     replacing the previous flat extruded rectangles.
+     Six curved, tube-like bands arranged as a staggered,
+     folded stack rather than near-concentric rings. Each
+     layer has its own arc length, its own xOffset/zOffset,
+     and its own rotationX so the bands overlap and tilt
+     against each other the way folded membrane actually
+     would, instead of reading as flat parallel stacking.
      ======================================================== */
 
   const layerDefinitions = [
     {
-      radius: 0.62,
-      tubeRadius: 0.075,
-      arc: Math.PI * 1.15,
-      waviness: 0.03,
-      twist: 0.05,
+      radius: 0.58,
+      tubeRadius: 0.072,
+      arc: Math.PI * 0.92,
+      waviness: 0.045,
+      twist: 0.09,
 
-      y: 0.47,
+      y: 0.48,
+      xOffset: 0.06,
+      zOffset: -0.04,
+
+      rotationZ: -0.08,
+      rotationY: 0.14,
+      rotationX: 0.10,
+    },
+
+    {
+      radius: 0.66,
+      tubeRadius: 0.078,
+      arc: Math.PI * 1.05,
+      waviness: 0.05,
+      twist: 0.075,
+
+      y: 0.29,
+      xOffset: 0.02,
+      zOffset: -0.01,
+
       rotationZ: -0.04,
-      rotationY: 0.05,
+      rotationY: 0.08,
+      rotationX: 0.05,
     },
 
     {
-      radius: 0.68,
-      tubeRadius: 0.08,
-      arc: Math.PI * 1.2,
-      waviness: 0.032,
-      twist: 0.055,
-
-      y: 0.27,
-      rotationZ: -0.02,
-      rotationY: 0.03,
-    },
-
-    {
-      radius: 0.73,
+      radius: 0.74,
       tubeRadius: 0.084,
-      arc: Math.PI * 1.24,
-      waviness: 0.034,
+      arc: Math.PI * 1.18,
+      waviness: 0.04,
       twist: 0.06,
 
-      y: 0.06,
-      rotationZ: -0.006,
-      rotationY: 0.008,
+      y: 0.08,
+      xOffset: -0.03,
+      zOffset: 0.02,
+
+      rotationZ: -0.01,
+      rotationY: 0.02,
+      rotationX: -0.02,
     },
 
     {
-      radius: 0.75,
+      radius: 0.76,
       tubeRadius: 0.084,
-      arc: Math.PI * 1.24,
-      waviness: 0.034,
-      twist: 0.06,
+      arc: Math.PI * 1.1,
+      waviness: 0.042,
+      twist: 0.065,
 
-      y: -0.15,
-      rotationZ: 0.012,
-      rotationY: -0.014,
+      y: -0.13,
+      xOffset: -0.07,
+      zOffset: 0.04,
+
+      rotationZ: 0.02,
+      rotationY: -0.05,
+      rotationX: -0.06,
     },
 
     {
-      radius: 0.71,
-      tubeRadius: 0.08,
-      arc: Math.PI * 1.2,
-      waviness: 0.032,
-      twist: 0.055,
+      radius: 0.7,
+      tubeRadius: 0.079,
+      arc: Math.PI * 0.98,
+      waviness: 0.05,
+      twist: 0.08,
 
-      y: -0.36,
-      rotationZ: 0.03,
-      rotationY: -0.035,
+      y: -0.34,
+      xOffset: -0.10,
+      zOffset: 0.05,
+
+      rotationZ: 0.06,
+      rotationY: -0.11,
+      rotationX: -0.10,
     },
 
     {
-      radius: 0.63,
-      tubeRadius: 0.075,
-      arc: Math.PI * 1.15,
-      waviness: 0.03,
-      twist: 0.05,
+      radius: 0.6,
+      tubeRadius: 0.072,
+      arc: Math.PI * 0.85,
+      waviness: 0.055,
+      twist: 0.1,
 
-      y: -0.55,
-      rotationZ: 0.05,
-      rotationY: -0.055,
+      y: -0.53,
+      xOffset: -0.13,
+      zOffset: 0.06,
+
+      rotationZ: 0.1,
+      rotationY: -0.16,
+      rotationX: -0.14,
     },
   ];
 
@@ -654,12 +682,17 @@ export function createGolgi() {
 
       /* ----------------------------------------------------
          Layer placement
+
+         xOffset/zOffset stagger each layer sideways instead
+         of sharing one central axis, and rotationX is now an
+         explicit per-layer value rather than a shared tiny
+         wobble, so the stack folds rather than just stacks.
          ---------------------------------------------------- */
 
       layerGroup.position.set(
-        -0.05,
+        -0.05 + definition.xOffset,
         definition.y,
-        0
+        definition.zOffset
       );
 
 
@@ -672,10 +705,7 @@ export function createGolgi() {
 
 
       layerGroup.rotation.x =
-        Math.sin(
-          index * 0.72
-        ) *
-        0.022;
+        definition.rotationX;
 
 
       layerGroup.userData.baseY =
@@ -688,6 +718,10 @@ export function createGolgi() {
 
       layerGroup.userData.baseRotationY =
         definition.rotationY;
+
+
+      layerGroup.userData.baseRotationX =
+        definition.rotationX;
 
 
       layerGroup.userData.phase =
@@ -893,6 +927,10 @@ export function createGolgi() {
 
     /* ------------------------------------------------------
        Gentle band motion
+
+       rotation.x now animates around each layer's own
+       baseRotationX (set from layerDefinitions) instead of
+       ignoring it, so the fold angle is preserved at rest.
        ------------------------------------------------------ */
 
     cisternaGroups.forEach(
@@ -937,6 +975,17 @@ export function createGolgi() {
             phase
           ) *
             0.003;
+
+
+        layerGroup.rotation.x =
+          layerGroup.userData
+            .baseRotationX +
+          Math.sin(
+            elapsedTime *
+              0.16 +
+            phase
+          ) *
+            0.004;
       }
     );
 

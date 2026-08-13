@@ -366,7 +366,7 @@ function createMitochondrion(
         0xb3441e,
 
       emissiveIntensity:
-        0.72,
+        0.95,
 
       roughness: 0.26,
 

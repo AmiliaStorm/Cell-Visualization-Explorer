@@ -384,4 +384,26 @@ centrosome: {
     0.54
   ),
 },
+
+/* ========================================================
+     Transport vesicle path
+
+     Rough ER -> Golgi, in the same local space as the other
+     organelles. Tune these two points directly against the
+     rendered gap between the ER's right edge and the Golgi's
+     left edge.
+     ======================================================== */
+  vesiclePath: {
+    origin: new THREE.Vector3(
+      -0.10,
+      0.05,
+      0.05
+    ),
+
+    destination: new THREE.Vector3(
+      0.68,
+      -0.05,
+      0.14
+    ),
+  },
 };

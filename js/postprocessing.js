@@ -112,8 +112,8 @@ export function createPostProcessing({
       camera,
       {
         focus: 8.3,
-        aperture: 0.00042,
-        maxblur: 0.006,
+        aperture: 0.0006,
+        maxblur: 0.009,
 
         width:
           container.clientWidth,
@@ -143,9 +143,9 @@ export function createPostProcessing({
         container.clientHeight
       ),
 
-      0.34,
-      0.30,
-      0.86
+      0.55,
+      0.42,
+      0.72
     );
 
   composer.addPass(

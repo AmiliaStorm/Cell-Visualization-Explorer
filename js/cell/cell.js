@@ -56,6 +56,10 @@ import {
   createPeroxisomes,
 } from "./peroxisomes.js";
 
+import {
+  createVesicles,
+} from "./vesicles.js";
+
 
 /* ==========================================================
    Build complete animal cell
@@ -135,6 +139,13 @@ export function buildCell(scene) {
 
   const golgi =
     createGolgi();
+
+    const vesicles =
+    createVesicles({
+      origin: cellLayout.vesiclePath.origin,
+      destination: cellLayout.vesiclePath.destination,
+      count: 6,
+    });
 
 
   const mitochondria =
@@ -411,6 +422,8 @@ export function buildCell(scene) {
     centrosome,
 
     golgi.group,
+    vesicles.group,
+
 
     ribosomes,
 
@@ -465,6 +478,8 @@ export function buildCell(scene) {
 
     golgi,
 
+    vesicles,
+
     centrosome,
 
     mitochondria,
@@ -513,6 +528,10 @@ export function buildCell(scene) {
 
 
       golgi.animate(
+        elapsedTime
+      );
+
+      vesicles.animate(
         elapsedTime
       );
 
