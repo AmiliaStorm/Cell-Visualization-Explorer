@@ -333,6 +333,190 @@ function createHaloMaterial() {
 
 
 /* ==========================================================
+   Membrane protein stud
+
+   A small ring-and-cap shape suggesting an embedded channel
+   or transport protein, scattered across the membrane
+   surface so it reads as a biological bilayer rather than a
+   plain glass shell.
+   ========================================================== */
+
+function createMembraneProtein(material) {
+  const group =
+    new THREE.Group();
+
+  const channel =
+    new THREE.Mesh(
+      new THREE.TorusGeometry(
+        0.026,
+        0.008,
+        8,
+        14
+      ),
+      material
+    );
+
+  const cap =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        0.014,
+        8,
+        8
+      ),
+      material
+    );
+
+  cap.position.z =
+    0.012;
+
+  group.add(
+    channel,
+    cap
+  );
+
+  return group;
+}
+
+
+/* ==========================================================
+   Scattered membrane protein field
+
+   Fibonacci-sphere placement across the membrane's actual
+   (deformed + scaled) surface, oriented to face outward.
+   Same distribution technique as the nuclear pores in
+   nucleus.js.
+   ========================================================== */
+
+function createMembraneProteins({
+  geometryRadius,
+  scale,
+  count = 90,
+}) {
+  const group =
+    new THREE.Group();
+
+  group.name =
+    "membraneProteins";
+
+  const material =
+    new THREE.MeshStandardMaterial({
+      color: 0x4fd6e8,
+
+      emissive: 0x0f4a56,
+      emissiveIntensity: 0.4,
+
+      roughness: 0.32,
+      metalness: 0,
+
+      transparent: true,
+      opacity: 0.55,
+    });
+
+  const proteins = [];
+
+  const goldenAngle =
+    Math.PI *
+    (
+      3 -
+      Math.sqrt(5)
+    );
+
+  for (
+    let index = 0;
+    index < count;
+    index += 1
+  ) {
+    const vertical =
+      1 -
+      (
+        index /
+        (count - 1)
+      ) * 2;
+
+    const horizontalRadius =
+      Math.sqrt(
+        Math.max(
+          0,
+          1 -
+          vertical * vertical
+        )
+      );
+
+    const theta =
+      goldenAngle * index;
+
+    const normal =
+      new THREE.Vector3(
+        Math.cos(theta) *
+          horizontalRadius,
+
+        vertical,
+
+        Math.sin(theta) *
+          horizontalRadius
+      ).normalize();
+
+    const position =
+      new THREE.Vector3(
+        normal.x *
+          geometryRadius *
+          scale.x *
+          1.001,
+
+        normal.y *
+          geometryRadius *
+          scale.y *
+          1.001,
+
+        normal.z *
+          geometryRadius *
+          scale.z *
+          1.001
+      );
+
+    const protein =
+      createMembraneProtein(
+        material
+      );
+
+    protein.position.copy(
+      position
+    );
+
+    protein.quaternion.setFromUnitVectors(
+      new THREE.Vector3(
+        0,
+        0,
+        1
+      ),
+      normal
+    );
+
+    protein.userData.phase =
+      (
+        index * 0.71
+      ) %
+      (
+        Math.PI * 2
+      );
+
+    group.add(
+      protein
+    );
+
+    proteins.push(
+      protein
+    );
+  }
+
+  return {
+    group,
+    proteins,
+  };
+}
+
+
+/* ==========================================================
    Cell membrane
    ========================================================== */
 
@@ -426,6 +610,27 @@ export function createMembrane() {
 
 
   /* ========================================================
+     Scattered membrane proteins
+
+     Added before the rim/halo glow layers so those glow
+     shells still render on top, on the outside.
+     ======================================================== */
+
+  const membraneProteins =
+    createMembraneProteins({
+      geometryRadius: 3,
+      scale: membrane.scale,
+      count: 90,
+    });
+
+  membraneProteins.group.renderOrder = 8;
+
+  membrane.add(
+    membraneProteins.group
+  );
+
+
+  /* ========================================================
      Crisp primary rim
      ======================================================== */
 
@@ -498,6 +703,9 @@ export function createMembrane() {
 
   membrane.userData.haloGlow =
     haloGlow;
+
+  membrane.userData.membraneProteins =
+    membraneProteins.proteins;
 
   membrane.renderOrder = 10;
 
