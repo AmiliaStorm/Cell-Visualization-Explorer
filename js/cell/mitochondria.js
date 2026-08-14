@@ -280,11 +280,14 @@ function createMitochondrion(
       transparent: true,
 
       /*
-       * Lower transparency lets us see the internal cristae.
+       * Slightly more opaque than before so the outer shell
+       * reads as a solid membrane with a glossy highlight,
+       * matching the reference, while still letting the
+       * denser cristae show through.
        */
-      opacity: 0.64,
+      opacity: 0.72,
 
-      roughness: 0.28,
+      roughness: 0.24,
 
       metalness: 0,
 
@@ -292,15 +295,15 @@ function createMitochondrion(
 
       thickness: 0.18,
 
-      clearcoat: 0.72,
+      clearcoat: 0.8,
 
-      clearcoatRoughness: 0.18,
+      clearcoatRoughness: 0.14,
 
       emissive:
-        0x46140c,
+        0x4a1509,
 
       emissiveIntensity:
-        0.28,
+        0.3,
 
       side:
         THREE.DoubleSide,
@@ -315,7 +318,7 @@ function createMitochondrion(
 
       transparent: true,
 
-      opacity: 0.16,
+      opacity: 0.2,
 
       roughness: 0.34,
 
@@ -329,7 +332,7 @@ function createMitochondrion(
         0x702514,
 
       emissiveIntensity:
-        0.23,
+        0.25,
 
       side:
         THREE.DoubleSide,
@@ -340,19 +343,19 @@ function createMitochondrion(
 
   const matrixMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0x74251c,
+      color: 0x7a281e,
 
       transparent: true,
 
-      opacity: 0.22,
+      opacity: 0.3,
 
       emissive:
-        0x38100b,
+        0x3c120c,
 
       emissiveIntensity:
-        0.18,
+        0.22,
 
-      roughness: 0.52,
+      roughness: 0.5,
 
       depthWrite: false,
     });
@@ -363,19 +366,19 @@ function createMitochondrion(
       color: 0xffb274,
 
       emissive:
-        0xb3441e,
+        0xc94f20,
 
       emissiveIntensity:
-        0.95,
+        0.85,
 
-      roughness: 0.26,
+      roughness: 0.24,
 
       metalness: 0,
 
-      clearcoat: 0.48,
+      clearcoat: 0.5,
 
       clearcoatRoughness:
-        0.2,
+        0.18,
     });
 
 
@@ -495,7 +498,10 @@ function createMitochondrion(
   /* ========================================================
      Cristae
 
-     More visible and slightly more densely packed.
+     Much denser and wider-spread than before, so they fill
+     nearly the whole interior width like the reference,
+     instead of a handful of thin lines confined to the
+     middle band.
      ======================================================== */
 
   const cristaeGroup =
@@ -505,7 +511,7 @@ function createMitochondrion(
   const cristae = [];
 
 
-  const cristaCount = 8;
+  const cristaCount = 16;
 
 
   for (
@@ -520,8 +526,8 @@ function createMitochondrion(
 
     const y =
       THREE.MathUtils.lerp(
-        -0.22,
-        0.22,
+        -0.30,
+        0.30,
         progress
       );
 
@@ -531,9 +537,9 @@ function createMitochondrion(
         seed * 100 +
           index,
 
-        -0.10,
+        -0.13,
 
-        0.11
+        0.14
       );
 
 
@@ -554,12 +560,12 @@ function createMitochondrion(
         seed * 110 +
           index,
 
-        0.68,
+        0.74,
 
-        0.79
+        0.85
       ) +
       centreWeight *
-        0.12;
+        0.14;
 
 
     const amplitude =
@@ -567,9 +573,9 @@ function createMitochondrion(
         seed * 120 +
           index,
 
-        0.055,
+        0.065,
 
-        0.078
+        0.09
       );
 
 
@@ -597,9 +603,9 @@ function createMitochondrion(
         seed * 130 +
           index,
 
-        -0.14,
+        -0.16,
 
-        0.14
+        0.16
       );
 
 
@@ -608,9 +614,9 @@ function createMitochondrion(
         seed * 140 +
           index,
 
-        -0.075,
+        -0.085,
 
-        0.075
+        0.085
       );
 
 

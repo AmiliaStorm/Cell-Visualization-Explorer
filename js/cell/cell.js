@@ -65,7 +65,10 @@ import {
    Build complete animal cell
    ========================================================== */
 
-export function buildCell(scene) {
+export function buildCell(
+  scene,
+  environmentMap = null
+) {
   const group =
     new THREE.Group();
 
@@ -74,12 +77,9 @@ export function buildCell(scene) {
     "animalCell";
 
 
-  /*
-   * The membrane, cytoplasm and cytoskeleton remain
-   * at full-cell scale.
-   *
-   * Major organelles are placed inside contentGroup.
-   */
+  /* ========================================================
+     Content group
+     ======================================================== */
 
   const contentGroup =
     new THREE.Group();
@@ -118,7 +118,9 @@ export function buildCell(scene) {
      ======================================================== */
 
   const membrane =
-    createMembrane();
+    createMembrane(
+      environmentMap
+    );
 
 
   const cytoplasm =
@@ -140,11 +142,21 @@ export function buildCell(scene) {
   const golgi =
     createGolgi();
 
-    const vesicles =
+
+  const vesicles =
     createVesicles({
-      origin: cellLayout.vesiclePath.origin,
-      destination: cellLayout.vesiclePath.destination,
-      count: 6,
+      origin:
+        cellLayout
+          .vesiclePath
+          .origin,
+
+      destination:
+        cellLayout
+          .vesiclePath
+          .destination,
+
+      count:
+        6,
     });
 
 
@@ -166,13 +178,17 @@ export function buildCell(scene) {
 
   const cytoplasmParticles =
     createCytoplasmParticles({
-      proteinCount: 280,
+      proteinCount:
+        280,
 
-      cellRadius: 3.05,
+      cellRadius:
+        3.05,
 
-      nucleusRadius: 1.18,
+      nucleusRadius:
+        1.18,
 
-      edgePadding: 0.2,
+      edgePadding:
+        0.2,
     });
 
 
@@ -263,17 +279,23 @@ export function buildCell(scene) {
     cellLayout.centrosome
   ) {
     centrosome.position.copy(
-      cellLayout.centrosome.position
+      cellLayout
+        .centrosome
+        .position
     );
 
 
     centrosome.rotation.copy(
-      cellLayout.centrosome.rotation
+      cellLayout
+        .centrosome
+        .rotation
     );
 
 
     centrosome.scale.copy(
-      cellLayout.centrosome.scale
+      cellLayout
+        .centrosome
+        .scale
     );
   }
 
@@ -290,8 +312,8 @@ export function buildCell(scene) {
       const layout =
         cellLayout
           .mitochondria[
-          index
-        ];
+            index
+          ];
 
 
       if (!layout) {
@@ -314,11 +336,6 @@ export function buildCell(scene) {
       );
 
 
-      /*
-       * Used by mitochondria.js so its breathing animation
-       * preserves the scale from layout.js.
-       */
-
       mitochondrion.userData
         .layoutScale =
         layout.scale;
@@ -336,9 +353,10 @@ export function buildCell(scene) {
       index
     ) => {
       const layout =
-        cellLayout.lysosomes[
-          index
-        ];
+        cellLayout
+          .lysosomes[
+            index
+          ];
 
 
       if (!layout) {
@@ -378,9 +396,10 @@ export function buildCell(scene) {
       index
     ) => {
       const layout =
-        cellLayout.peroxisomes[
-          index
-        ];
+        cellLayout
+          .peroxisomes[
+            index
+          ];
 
 
       if (!layout) {
@@ -416,19 +435,23 @@ export function buildCell(scene) {
 
   contentGroup.add(
     roughER.group,
+
     smoothER.group,
+
     nucleus.group,
 
     centrosome,
 
     golgi.group,
-    vesicles.group,
 
+    vesicles.group,
 
     ribosomes,
 
     ...mitochondria,
+
     ...lysosomes,
+
     ...peroxisomes
   );
 
@@ -531,6 +554,7 @@ export function buildCell(scene) {
         elapsedTime
       );
 
+
       vesicles.animate(
         elapsedTime
       );
@@ -552,10 +576,6 @@ export function buildCell(scene) {
       );
 
 
-      /*
-       * Centrosome animation.
-       */
-
       if (
         typeof centrosome.animate ===
         "function"
@@ -566,9 +586,9 @@ export function buildCell(scene) {
       }
 
 
-      /*
-       * Gentle plasma-membrane breathing.
-       */
+      /* ----------------------------------------------------
+         Gentle plasma-membrane breathing
+         ---------------------------------------------------- */
 
       const membranePulse =
         1 +
