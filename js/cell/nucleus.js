@@ -217,7 +217,7 @@ export function createNucleus() {
       color: 0x7546c5,
 
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.5,
 
       roughness: 0.3,
       metalness: 0,
@@ -227,8 +227,8 @@ export function createNucleus() {
       clearcoat: 0.55,
       clearcoatRoughness: 0.28,
 
-      emissive: 0x241048,
-      emissiveIntensity: 0.22,
+      emissive: 0x3a1a70,
+      emissiveIntensity: 0.35,
 
       side: THREE.DoubleSide,
 
@@ -260,15 +260,15 @@ export function createNucleus() {
       color: 0x9b70df,
 
       transparent: true,
-      opacity: 0.1,
+      opacity: 0.3,
 
       roughness: 0.36,
       metalness: 0,
 
       transmission: 0,
 
-      emissive: 0x32155d,
-      emissiveIntensity: 0.14,
+      emissive: 0x4a1f7d,
+      emissiveIntensity: 0.28,
 
       side: THREE.DoubleSide,
 
@@ -311,13 +311,13 @@ export function createNucleus() {
       ),
 
       new THREE.MeshStandardMaterial({
-        color: 0x4e287d,
+        color: 0x5a2f96,
 
         transparent: true,
-        opacity: 0.09,
+        opacity: 0.28,
 
-        emissive: 0x1e0c36,
-        emissiveIntensity: 0.18,
+        emissive: 0x2a1050,
+        emissiveIntensity: 0.32,
 
         roughness: 0.55,
 

@@ -29,10 +29,12 @@ function randomBetween(
 
 
 /* ==========================================================
-   Create organic horseshoe-style control points
+   Create organic fan-style control points
 
-   Instead of perfect concentric circles, each cisterna gets
-   its own irregular path around the nucleus.
+   Each cisterna sweeps a shorter, open arc (roughly 170
+   degrees instead of the old ~280 degree wrap), so the
+   layers read as a fanned pleated sheet rather than a
+   tightly wound spiral, matching the reference model.
    ========================================================== */
 
 function createOrganicArcPoints({
@@ -483,6 +485,95 @@ function createSheetEdge({
 
 
 /* ==========================================================
+   Pocket-style end cap
+
+   Seals the open mouth of each cisterna with a flattened,
+   rounded cap, so each sheet reads as a closed sac/pocket
+   (biologically accurate rough ER) rather than an open
+   ribbon that just cuts off at both ends.
+   ========================================================== */
+
+function createCisternaEndCap({
+  curve,
+  atStart,
+  width,
+  material,
+}) {
+  const progress =
+    atStart ? 0 : 1;
+
+  const center =
+    curve.getPointAt(
+      progress
+    );
+
+  const tangent =
+    curve
+      .getTangentAt(progress)
+      .normalize();
+
+  const capRadius =
+    width * 0.58;
+
+  const geometry =
+    new THREE.SphereGeometry(
+      capRadius,
+      16,
+      12,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI * 0.58
+    );
+
+  const cap =
+    new THREE.Mesh(
+      geometry,
+      material
+    );
+
+  cap.position.copy(
+    center
+  );
+
+  /*
+   * Orient the rounded cap so its dome faces outward
+   * along the tube's own direction, closing the mouth
+   * of the sheet like a sealed pocket end.
+   */
+
+  const facing =
+    atStart
+      ? tangent.clone().negate()
+      : tangent.clone();
+
+  cap.quaternion.setFromUnitVectors(
+    new THREE.Vector3(0, 1, 0),
+    facing
+  );
+
+  /*
+   * Slight flattening keeps it consistent with the thin
+   * membrane sheet it's capping, rather than looking like
+   * a round bulb.
+   */
+
+  cap.scale.set(
+    1,
+    0.55,
+    1
+  );
+
+  cap.castShadow = true;
+  cap.receiveShadow = true;
+
+  cap.renderOrder = 3;
+
+  return cap;
+}
+
+
+/* ==========================================================
    Create complete rough-ER cisterna
    ========================================================== */
 
@@ -527,7 +618,7 @@ function createCisterna({
 
       widthProgress: 0,
 
-      radius: 0.018,
+      radius: 0.028,
 
       material:
         edgeMaterial,
@@ -545,16 +636,44 @@ function createCisterna({
 
       widthProgress: 1,
 
-      radius: 0.021,
+      radius: 0.032,
 
       material:
         edgeMaterial,
     });
 
+  const capStart =
+    createCisternaEndCap({
+      curve,
+
+      atStart: true,
+
+      width:
+        configuration.width,
+
+      material:
+        surfaceMaterial,
+    });
+
+  const capEnd =
+    createCisternaEndCap({
+      curve,
+
+      atStart: false,
+
+      width:
+        configuration.width,
+
+      material:
+        surfaceMaterial,
+    });
+
   group.add(
     surface,
     innerEdge,
-    outerEdge
+    outerEdge,
+    capStart,
+    capEnd
   );
 
   return {
@@ -661,11 +780,17 @@ function attachRibosomesToCisterna({
       );
 
     const widthProgress =
-      randomBetween(
-        seed + 2,
-        0.10,
-        0.90
-      );
+      pseudoRandom(seed + 2) < 0.5
+        ? randomBetween(
+            seed + 2,
+            0.04,
+            0.22
+          )
+        : randomBetween(
+            seed + 2,
+            0.78,
+            0.96
+          );
 
     const sample =
       getPointOnCisterna({
@@ -788,16 +913,21 @@ export function createRoughER() {
 
   /* ========================================================
      Materials
+
+     Warm tan/rust palette instead of the previous blue,
+     so the ER reads as a distinct structure from the
+     nucleus and cytoplasm rather than blending into them,
+     matching the reference model's coloring.
      ======================================================== */
 
   const surfaceMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0x174eae,
+      color: 0x2c3f6e,
 
       transparent: true,
       opacity: 0.93,
 
-      roughness: 0.28,
+      roughness: 0.3,
       metalness: 0,
 
       transmission: 0,
@@ -805,8 +935,8 @@ export function createRoughER() {
       clearcoat: 0.58,
       clearcoatRoughness: 0.21,
 
-      emissive: 0x061d62,
-      emissiveIntensity: 0.38,
+      emissive: 0x0e1a3a,
+      emissiveIntensity: 0.34,
 
       side:
         THREE.DoubleSide,
@@ -818,12 +948,12 @@ export function createRoughER() {
 
   const edgeMaterial =
     new THREE.MeshPhysicalMaterial({
-      color: 0x347bed,
+      color: 0x4f6aa8,
 
-      emissive: 0x0c3a99,
-      emissiveIntensity: 0.48,
+      emissive: 0x1c2b58,
+      emissiveIntensity: 0.42,
 
-      roughness: 0.23,
+      roughness: 0.24,
       metalness: 0,
 
       clearcoat: 0.45,
@@ -833,10 +963,10 @@ export function createRoughER() {
 
   const ribosomeMaterial =
     new THREE.MeshStandardMaterial({
-      color: 0xd5ad4f,
+      color: 0xe0c268,
 
-      emissive: 0x674009,
-      emissiveIntensity: 0.38,
+      emissive: 0x8a5a12,
+      emissiveIntensity: 0.4,
 
       roughness: 0.38,
       metalness: 0,
@@ -849,16 +979,13 @@ export function createRoughER() {
 
 
   /* ========================================================
-     Organic cisternae
+     Fanned cisternae
 
-     These are NOT perfect concentric rings.
-
-     Each membrane has:
-     - its own radius
-     - its own centre
-     - different open ends
-     - different depth
-     - different vertical compression
+     Each cisterna now sweeps roughly 170 degrees (down from
+     the old ~280 degree near-full wrap), so the stack reads
+     as an open, pleated fan rather than a tight spiral.
+     Centered around angle ~3.05 rad so the fan still opens
+     toward the nucleus, matching the original orientation.
      ======================================================== */
 
   const cisternaDefinitions = [
@@ -874,7 +1001,7 @@ export function createRoughER() {
 
       zOffset: -0.08,
 
-      width: 0.19,
+      width: 0.14,
     },
 
     {
@@ -889,7 +1016,7 @@ export function createRoughER() {
 
       zOffset: -0.105,
 
-      width: 0.21,
+      width: 0.155,
     },
 
     {
@@ -904,7 +1031,7 @@ export function createRoughER() {
 
       zOffset: -0.13,
 
-      width: 0.22,
+      width: 0.165,
     },
 
     {
@@ -919,7 +1046,7 @@ export function createRoughER() {
 
       zOffset: -0.15,
 
-      width: 0.225,
+      width: 0.17,
     },
 
     {
@@ -934,7 +1061,7 @@ export function createRoughER() {
 
       zOffset: -0.17,
 
-      width: 0.22,
+      width: 0.165,
     },
 
     {
@@ -949,7 +1076,7 @@ export function createRoughER() {
 
       zOffset: -0.19,
 
-      width: 0.215,
+      width: 0.16,
     },
 
     {
@@ -964,7 +1091,7 @@ export function createRoughER() {
 
       zOffset: -0.21,
 
-      width: 0.20,
+      width: 0.15,
     },
 
     {
@@ -979,7 +1106,7 @@ export function createRoughER() {
 
       zOffset: -0.23,
 
-      width: 0.185,
+      width: 0.14,
     },
   ];
 
@@ -1132,8 +1259,10 @@ export function createRoughER() {
      A few shorter side folds
 
      These prevent the entire rough ER from reading as one
-     giant horseshoe and make it feel like a true membrane
-     network.
+     giant fan and make it feel like a true membrane
+     network. Kept unchanged from the original — these are
+     small local folds, not the main silhouette, so they
+     don't need to move for the fan-shape fix.
      ======================================================== */
 
   const sideFoldDefinitions = [

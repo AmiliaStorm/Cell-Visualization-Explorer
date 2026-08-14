@@ -44,6 +44,7 @@ import {
   createPathwayMarkers,
 } from "./ui/pathwayMarkers.js";
 
+
 /* ==========================================================
    Canvas container
    ========================================================== */
@@ -53,11 +54,13 @@ const container =
     "#cell-canvas"
   );
 
+
 if (!container) {
   throw new Error(
     'Could not find "#cell-canvas".'
   );
 }
+
 
 /* ==========================================================
    Scene
@@ -67,9 +70,12 @@ const {
   scene,
   camera,
   renderer,
-} = createScene(
-  container
-);
+  environmentMap,
+} =
+  createScene(
+    container
+  );
+
 
 /* ==========================================================
    Camera controls
@@ -81,6 +87,7 @@ const controls =
     renderer.domElement
   );
 
+
 /* ==========================================================
    Lighting
    ========================================================== */
@@ -90,27 +97,28 @@ const lights =
     scene
   );
 
+
 /* ==========================================================
    Cell
+
+   Pass the reflection map specifically into the cell so only
+   membrane.js decides how strongly to use it.
    ========================================================== */
 
 const cell =
   buildCell(
-    scene
+    scene,
+    environmentMap
   );
 
-/*
- * Do not override the cell position or scale here.
- * The final composition is controlled by cell.js,
- * layout.js, and contentGroup.
- */
 
 /* ==========================================================
-   Membrane bilayer patch (Cutaway view only)
+   Membrane bilayer patch
    ========================================================== */
 
 const bilayerPatch =
   createBilayerPatch();
+
 
 bilayerPatch.group.position.set(
   0.95,
@@ -118,20 +126,27 @@ bilayerPatch.group.position.set(
   0.65
 );
 
+
 bilayerPatch.group.rotation.set(
   0.55,
   0.3,
   0.02
 );
 
+
 bilayerPatch.group.scale.setScalar(
   1.0
 );
-bilayerPatch.group.visible = false;
+
+
+bilayerPatch.group.visible =
+  false;
+
 
 scene.add(
   bilayerPatch.group
 );
+
 
 /* ==========================================================
    Protein-production simulation
@@ -141,6 +156,7 @@ const simulation =
   createProteinProductionSimulation({
     cell,
   });
+
 
 /* ==========================================================
    Camera director
@@ -153,6 +169,7 @@ const cameraDirector =
     simulation,
   });
 
+
 /* ==========================================================
    Interface
    ========================================================== */
@@ -162,8 +179,9 @@ const ui =
     simulation,
   });
 
+
 /* ==========================================================
-   Pathway markers (overlaid on 3D scene)
+   Pathway markers
    ========================================================== */
 
 const pathwayMarkers =
@@ -171,6 +189,7 @@ const pathwayMarkers =
     container,
     camera,
   });
+
 
 /* ==========================================================
    Organelle interaction
@@ -182,16 +201,23 @@ const organelleInteraction =
     renderer,
     cell,
 
-    onSelect(organelle) {
+
+    onSelect(
+      organelle
+    ) {
       if (!organelle) {
-        cameraDirector.clearFocus();
+        cameraDirector
+          .clearFocus();
+
 
         console.log(
           "Selection cleared"
         );
 
+
         return;
       }
+
 
       cameraDirector.focusOn(
         organelle.object,
@@ -202,6 +228,7 @@ const organelleInteraction =
           : 3.3
       );
 
+
       console.log(
         "Selected organelle:",
         organelle
@@ -209,8 +236,9 @@ const organelleInteraction =
     },
   });
 
+
 /* ==========================================================
-   View mode buttons (3D / Cutaway)
+   View mode buttons
    ========================================================== */
 
 const viewMode3DButton =
@@ -218,51 +246,95 @@ const viewMode3DButton =
     "#view-mode-3d"
   );
 
+
 const viewModeCutawayButton =
   document.querySelector(
     "#view-mode-cutaway"
   );
 
-function setCutawayMode(isActive) {
+
+function setCutawayMode(
+  isActive
+) {
   bilayerPatch.group.visible =
     isActive;
 
+
   /*
-   * Dim the membrane slightly so the embedded
-   * bilayer patch reads clearly against it.
+   * We now control the physical transparency using
+   * transmission rather than opacity.
    */
-  cell.membrane.material.opacity =
-    isActive ? 0.02 : 0.04;
 
-  viewMode3DButton.classList.toggle(
-    "active",
-    !isActive
-  );
-
-  viewModeCutawayButton.classList.toggle(
-    "active",
+  cell.membrane.material
+    .transmission =
     isActive
-  );
+      ? 0.90
+      : cell.membrane
+          .userData
+          .baseTransmission;
+
+
+  /*
+   * Reduce reflection slightly in cutaway mode so the
+   * membrane does not overpower the bilayer visualization.
+   */
+
+  cell.membrane.material
+    .envMapIntensity =
+    isActive
+      ? 0.55
+      : cell.membrane
+          .userData
+          .baseEnvMapIntensity;
+
+
+  viewMode3DButton
+    .classList
+    .toggle(
+      "active",
+      !isActive
+    );
+
+
+  viewModeCutawayButton
+    .classList
+    .toggle(
+      "active",
+      isActive
+    );
 }
+
 
 if (
   viewMode3DButton &&
   viewModeCutawayButton
 ) {
-  viewMode3DButton.addEventListener(
-    "click",
-    () => setCutawayMode(false)
-  );
+  viewMode3DButton
+    .addEventListener(
+      "click",
 
-  viewModeCutawayButton.addEventListener(
-    "click",
-    () => setCutawayMode(true)
-  );
+      () =>
+        setCutawayMode(
+          false
+        )
+    );
+
+
+  viewModeCutawayButton
+    .addEventListener(
+      "click",
+
+      () =>
+        setCutawayMode(
+          true
+        )
+    );
 } else {
   console.warn(
     "Cutaway toggle buttons not found in the DOM."
   );
 }
+
 
 /* ==========================================================
    Post-processing
@@ -273,12 +345,14 @@ const {
 
   resize:
     resizePostProcessing,
-} = createPostProcessing({
-  renderer,
-  scene,
-  camera,
-  container,
-});
+} =
+  createPostProcessing({
+    renderer,
+    scene,
+    camera,
+    container,
+  });
+
 
 /* ==========================================================
    Animation clock
@@ -286,6 +360,7 @@ const {
 
 const clock =
   new THREE.Clock();
+
 
 /* ==========================================================
    Animation loop
@@ -298,13 +373,15 @@ function animate() {
       0.05
     );
 
+
   const elapsedTime =
     clock.elapsedTime;
 
-  /*
-   * Rotate the complete cell very gently while
-   * the pathway is paused and no organelle is selected.
-   */
+
+  /* --------------------------------------------------------
+     Gentle full-cell rotation while idle
+     -------------------------------------------------------- */
+
   if (
     !simulation.isPlaying &&
     !organelleInteraction.selected
@@ -313,106 +390,132 @@ function animate() {
       0.00008;
   }
 
-  /*
-   * Animate the organelles and internal cell structures.
-   */
+
+  /* --------------------------------------------------------
+     Cell animation
+     -------------------------------------------------------- */
+
   cell.animate(
     elapsedTime,
     deltaTime
   );
 
-  /*
-   * Animate the bilayer patch (only visible in Cutaway).
-   */
+
+  /* --------------------------------------------------------
+     Bilayer animation
+     -------------------------------------------------------- */
+
   bilayerPatch.animate(
     elapsedTime
   );
 
-  /*
-   * Update the protein-production pathway.
-   *
-   * Its internal animation clock only advances while
-   * the simulation is playing.
-   */
+
+  /* --------------------------------------------------------
+     Protein pathway
+     -------------------------------------------------------- */
+
   simulation.update(
     deltaTime
   );
 
-  /*
-   * Update the timeline, buttons, and active-stage UI.
-   */
+
+  /* --------------------------------------------------------
+     UI
+     -------------------------------------------------------- */
+
   ui.update();
 
-  /*
-   * Update pathway marker positions and active state.
-   */
+
+  /* --------------------------------------------------------
+     Pathway markers
+     -------------------------------------------------------- */
+
   pathwayMarkers.update();
+
+
   pathwayMarkers.setActiveStage(
     simulation.stage
   );
 
-  /*
-   * Subtle animated lighting.
-   *
-   * These names match the updated lighting.js file.
-   */
+
+  /* ========================================================
+     Subtle animated lighting
+
+     Slightly restrained so the organelles stay saturated
+     rather than becoming washed out.
+     ======================================================== */
+
   if (
     lights.nucleusAccent
   ) {
-    lights.nucleusAccent.intensity =
-      0.82 +
+    lights.nucleusAccent
+      .intensity =
+      0.70 +
       Math.sin(
-        elapsedTime * 0.9
+        elapsedTime *
+        0.9
       ) *
-        0.08;
+      0.06;
   }
+
 
   if (
     lights.mitochondrialAccent
   ) {
-    lights.mitochondrialAccent.intensity =
-      0.75 +
+    lights
+      .mitochondrialAccent
+      .intensity =
+      0.66 +
       Math.sin(
-        elapsedTime * 0.7 +
+        elapsedTime *
+          0.7 +
           1.4
       ) *
-        0.08;
+      0.06;
   }
+
 
   if (
     lights.golgiAccent
   ) {
-    lights.golgiAccent.intensity =
-      0.68 +
+    lights.golgiAccent
+      .intensity =
+      0.56 +
       Math.sin(
-        elapsedTime * 0.6 +
+        elapsedTime *
+          0.6 +
           0.8
       ) *
-        0.05;
+      0.04;
   }
 
-  /*
-   * Update stage camera movement or organelle focus.
-   *
-   * cameraDirector also updates OrbitControls.
-   */
+
+  /* --------------------------------------------------------
+     Camera movement / organelle focus
+     -------------------------------------------------------- */
+
   cameraDirector.update(
     deltaTime
   );
 
-  /*
-   * Render with post-processing.
-   */
+
+  /* --------------------------------------------------------
+     Render
+     -------------------------------------------------------- */
+
   composer.render(
     deltaTime
   );
+
 
   requestAnimationFrame(
     animate
   );
 }
 
+
 animate();
+
 
 /* ==========================================================
    Keyboard shortcuts
@@ -420,25 +523,31 @@ animate();
 
 window.addEventListener(
   "keydown",
-  (event) => {
-    /*
-     * Avoid triggering shortcuts while typing
-     * inside an input or select element.
-     */
+
+  (
+    event
+  ) => {
     const target =
       event.target;
+
 
     const isFormElement =
       target instanceof
         HTMLInputElement ||
+
       target instanceof
         HTMLTextAreaElement ||
+
       target instanceof
         HTMLSelectElement;
 
-    if (isFormElement) {
+
+    if (
+      isFormElement
+    ) {
       return;
     }
+
 
     if (
       event.code ===
@@ -446,15 +555,19 @@ window.addEventListener(
     ) {
       event.preventDefault();
 
+
       simulation.toggle();
     }
 
+
     if (
-      event.key.toLowerCase() ===
+      event.key
+        .toLowerCase() ===
       "r"
     ) {
       simulation.restart();
     }
+
 
     if (
       event.key ===
@@ -465,6 +578,7 @@ window.addEventListener(
       );
     }
 
+
     if (
       event.key ===
       "2"
@@ -473,6 +587,7 @@ window.addEventListener(
         2
       );
     }
+
 
     if (
       event.key ===
@@ -485,8 +600,9 @@ window.addEventListener(
   }
 );
 
+
 /* ==========================================================
-   Resize handling
+   Resize
    ========================================================== */
 
 function resizeScene() {
@@ -496,22 +612,28 @@ function resizeScene() {
       1
     );
 
+
   const height =
     Math.max(
       container.clientHeight,
       1
     );
 
+
   camera.aspect =
-    width / height;
+    width /
+    height;
+
 
   camera.updateProjectionMatrix();
+
 
   renderer.setSize(
     width,
     height,
     false
   );
+
 
   renderer.setPixelRatio(
     Math.min(
@@ -520,19 +642,18 @@ function resizeScene() {
     )
   );
 
+
   resizePostProcessing(
     width,
     height
   );
 }
 
+
 window.addEventListener(
   "resize",
   resizeScene
 );
 
-/*
- * Ensure the renderer and composer match
- * the container after the page layout is ready.
- */
+
 resizeScene();

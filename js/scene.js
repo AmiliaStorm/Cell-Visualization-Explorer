@@ -1,5 +1,9 @@
 import * as THREE from "three";
 
+import {
+  RoomEnvironment,
+} from "three/addons/environments/RoomEnvironment.js";
+
 
 /* ==========================================================
    Overview camera
@@ -13,252 +17,12 @@ export const OVERVIEW_CAMERA_POSITION =
   );
 
 
-/* ==========================================================
-   Lighting rig
-
-   Designed for the dark scientific / bioluminescent look
-   of the Cell Function Explorer concept.
-
-   The goal is:
-   - readable organelles
-   - cyan membrane highlights
-   - purple nucleus emphasis
-   - warm mitochondrial highlights
-   - dark background preserved
-   ========================================================== */
-
-function createLighting(scene) {
-
-  /* --------------------------------------------------------
-     Very soft global illumination
-
-     Prevents shadowed sides from becoming completely black.
-     -------------------------------------------------------- */
-
-  const ambientLight =
-    new THREE.AmbientLight(
-      0x8eb8dc,
-      0.24
-    );
-
-  scene.add(
-    ambientLight
-  );
-
-
-  /* --------------------------------------------------------
-     Cool environmental fill
-
-     Blue light from above, very dark blue from below.
-     -------------------------------------------------------- */
-
-  const hemisphereLight =
-    new THREE.HemisphereLight(
-      0x87d8ff,
-      0x03101c,
-      0.58
-    );
-
-  hemisphereLight.position.set(
+export const OVERVIEW_CAMERA_TARGET =
+  new THREE.Vector3(
+    -0.3,
     0,
-    5,
-    2
+    0
   );
-
-  scene.add(
-    hemisphereLight
-  );
-
-
-  /* --------------------------------------------------------
-     Main key light
-
-     Front-right illumination gives the organelles their
-     primary 3D form and glossy highlights.
-     -------------------------------------------------------- */
-
-  const keyLight =
-    new THREE.DirectionalLight(
-      0xb9ddff,
-      2.15
-    );
-
-  keyLight.position.set(
-    4.5,
-    5,
-    7
-  );
-
-  keyLight.castShadow = true;
-
-  keyLight.shadow.mapSize.set(
-    1024,
-    1024
-  );
-
-  keyLight.shadow.camera.near =
-    0.5;
-
-  keyLight.shadow.camera.far =
-    20;
-
-  keyLight.shadow.bias =
-    -0.0004;
-
-  scene.add(
-    keyLight
-  );
-
-
-  /* --------------------------------------------------------
-     Cyan fill from left
-
-     Helps the rough ER and membrane retain the blue/cyan
-     appearance from the target design.
-     -------------------------------------------------------- */
-
-  const cyanFill =
-    new THREE.PointLight(
-      0x28bce8,
-      7.0,
-      10,
-      2
-    );
-
-  cyanFill.position.set(
-    -4,
-    1.8,
-    4
-  );
-
-  cyanFill.castShadow = false;
-
-  scene.add(
-    cyanFill
-  );
-
-
-  /* --------------------------------------------------------
-     Nucleus accent
-
-     Soft violet illumination around the nucleus.
-     This is intentionally local rather than lighting the
-     entire scene purple.
-     -------------------------------------------------------- */
-
-  const nucleusLight =
-    new THREE.PointLight(
-      0x7658ff,
-      5.8,
-      5.5,
-      2
-    );
-
-  nucleusLight.position.set(
-    -0.9,
-    0.15,
-    2.0
-  );
-
-  nucleusLight.castShadow = false;
-
-  scene.add(
-    nucleusLight
-  );
-
-
-  /* --------------------------------------------------------
-     Warm organelle accent
-
-     Adds warm reflections to mitochondria and gives some
-     separation between the blue ER and right side of cell.
-     -------------------------------------------------------- */
-
-  const warmLight =
-    new THREE.PointLight(
-      0xff7958,
-      4.2,
-      6.5,
-      2
-    );
-
-  warmLight.position.set(
-    2.2,
-    1.3,
-    2.4
-  );
-
-  warmLight.castShadow = false;
-
-  scene.add(
-    warmLight
-  );
-
-
-  /* --------------------------------------------------------
-     Magenta Golgi accent
-
-     Helps the Golgi retain its pink / violet appearance
-     instead of disappearing into the dark cytoplasm.
-     -------------------------------------------------------- */
-
-  const golgiLight =
-    new THREE.PointLight(
-      0xff5fc8,
-      3.8,
-      4.2,
-      2
-    );
-
-  golgiLight.position.set(
-    1.25,
-    -0.2,
-    2.0
-  );
-
-  golgiLight.castShadow = false;
-
-  scene.add(
-    golgiLight
-  );
-
-
-  /* --------------------------------------------------------
-     Rear rim light
-
-     Extremely subtle cyan illumination from behind.
-     Adds separation from the background and reinforces
-     the translucent cell silhouette.
-     -------------------------------------------------------- */
-
-  const rearLight =
-    new THREE.DirectionalLight(
-      0x127da9,
-      0.75
-    );
-
-  rearLight.position.set(
-    -2,
-    2,
-    -6
-  );
-
-  scene.add(
-    rearLight
-  );
-
-
-  return {
-    ambientLight,
-    hemisphereLight,
-    keyLight,
-    cyanFill,
-    nucleusLight,
-    warmLight,
-    golgiLight,
-    rearLight,
-  };
-}
 
 
 /* ==========================================================
@@ -274,8 +38,6 @@ export function createScene(
 
   /* --------------------------------------------------------
      Background
-
-     Nearly black, with a very slight blue tone.
      -------------------------------------------------------- */
 
   scene.background =
@@ -311,9 +73,7 @@ export function createScene(
 
 
   camera.lookAt(
-    -0.3,
-    0,
-    0
+    OVERVIEW_CAMERA_TARGET
   );
 
 
@@ -352,9 +112,6 @@ export function createScene(
 
   /* --------------------------------------------------------
      Filmic tone mapping
-
-     Keeps bright highlights from clipping while preserving
-     the dark scientific aesthetic.
      -------------------------------------------------------- */
 
   renderer.toneMapping =
@@ -363,6 +120,43 @@ export function createScene(
 
   renderer.toneMappingExposure =
     1.28;
+
+
+  /* ========================================================
+     Reflection environment
+
+     IMPORTANT:
+     We create the environment map here, but DO NOT assign it
+     to scene.environment.
+
+     This allows us to give the wet reflection specifically
+     to the plasma membrane without washing out every other
+     organelle.
+     ======================================================== */
+
+  const environment =
+    new RoomEnvironment();
+
+
+  const pmremGenerator =
+    new THREE.PMREMGenerator(
+      renderer
+    );
+
+
+  const environmentMap =
+    pmremGenerator
+      .fromScene(
+        environment,
+        0.06
+      )
+      .texture;
+
+
+  environment.dispose();
+
+
+  pmremGenerator.dispose();
 
 
   /* ========================================================
@@ -382,16 +176,6 @@ export function createScene(
 
 
   /* ========================================================
-     Lighting
-     ======================================================== */
-
-  const lights =
-    createLighting(
-      scene
-    );
-
-
-  /* ========================================================
      Attach renderer
      ======================================================== */
 
@@ -408,6 +192,387 @@ export function createScene(
     scene,
     camera,
     renderer,
-    lights,
+    environmentMap,
+  };
+}
+
+
+/* ==========================================================
+   Camera focus controller
+   ========================================================== */
+
+export function createCameraFocusController(
+  camera
+) {
+  const currentTarget =
+    OVERVIEW_CAMERA_TARGET.clone();
+
+
+  let transition =
+    null;
+
+
+  let focusedObject =
+    null;
+
+
+  let isFocused =
+    false;
+
+
+  /* ========================================================
+     Easing
+     ======================================================== */
+
+  function easeInOutCubic(
+    value
+  ) {
+    if (
+      value < 0.5
+    ) {
+      return (
+        4 *
+        value *
+        value *
+        value
+      );
+    }
+
+
+    return (
+      1 -
+      Math.pow(
+        -2 * value + 2,
+        3
+      ) /
+        2
+    );
+  }
+
+
+  /* ========================================================
+     Start transition
+     ======================================================== */
+
+  function startTransition({
+    position,
+    target,
+    duration = 900,
+    onComplete = null,
+  }) {
+    transition = {
+      startTime:
+        performance.now(),
+
+      duration,
+
+      startPosition:
+        camera.position.clone(),
+
+      endPosition:
+        position.clone(),
+
+      startTarget:
+        currentTarget.clone(),
+
+      endTarget:
+        target.clone(),
+
+      onComplete,
+    };
+  }
+
+
+  /* ========================================================
+     Calculate organelle focus view
+     ======================================================== */
+
+  function calculateFocusView(
+    object
+  ) {
+    if (!object) {
+      return null;
+    }
+
+
+    const boundingBox =
+      new THREE.Box3()
+        .setFromObject(
+          object
+        );
+
+
+    if (
+      boundingBox.isEmpty()
+    ) {
+      return null;
+    }
+
+
+    const boundingSphere =
+      new THREE.Sphere();
+
+
+    boundingBox.getBoundingSphere(
+      boundingSphere
+    );
+
+
+    const center =
+      boundingSphere.center.clone();
+
+
+    const radius =
+      Math.max(
+        boundingSphere.radius,
+        0.15
+      );
+
+
+    const verticalFov =
+      THREE.MathUtils.degToRad(
+        camera.fov
+      );
+
+
+    let distance =
+      radius /
+      Math.tan(
+        verticalFov * 0.5
+      );
+
+
+    distance *=
+      1.55;
+
+
+    distance =
+      Math.max(
+        distance,
+        1.15
+      );
+
+
+    const viewDirection =
+      camera.position
+        .clone()
+        .sub(
+          currentTarget
+        )
+        .normalize();
+
+
+    const position =
+      center
+        .clone()
+        .add(
+          viewDirection
+            .multiplyScalar(
+              distance
+            )
+        );
+
+
+    position.x +=
+      radius * 0.12;
+
+
+    return {
+      position,
+
+      target:
+        center,
+    };
+  }
+
+
+  /* ========================================================
+     Focus
+     ======================================================== */
+
+  function focusOnObject(
+    object
+  ) {
+    if (!object) {
+      return;
+    }
+
+
+    const view =
+      calculateFocusView(
+        object
+      );
+
+
+    if (!view) {
+      return;
+    }
+
+
+    focusedObject =
+      object;
+
+
+    isFocused =
+      false;
+
+
+    startTransition({
+      position:
+        view.position,
+
+      target:
+        view.target,
+
+      duration:
+        950,
+
+      onComplete: () => {
+        isFocused =
+          true;
+      },
+    });
+  }
+
+
+  /* ========================================================
+     Return to overview
+     ======================================================== */
+
+  function returnToOverview() {
+    isFocused =
+      false;
+
+
+    startTransition({
+      position:
+        OVERVIEW_CAMERA_POSITION,
+
+      target:
+        OVERVIEW_CAMERA_TARGET,
+
+      duration:
+        1000,
+
+      onComplete: () => {
+        focusedObject =
+          null;
+
+        isFocused =
+          false;
+      },
+    });
+  }
+
+
+  /* ========================================================
+     Update
+     ======================================================== */
+
+  function update() {
+    if (!transition) {
+      camera.lookAt(
+        currentTarget
+      );
+
+      return;
+    }
+
+
+    const now =
+      performance.now();
+
+
+    const rawProgress =
+      (
+        now -
+        transition.startTime
+      ) /
+      transition.duration;
+
+
+    const progress =
+      THREE.MathUtils.clamp(
+        rawProgress,
+        0,
+        1
+      );
+
+
+    const eased =
+      easeInOutCubic(
+        progress
+      );
+
+
+    camera.position.lerpVectors(
+      transition.startPosition,
+      transition.endPosition,
+      eased
+    );
+
+
+    currentTarget.lerpVectors(
+      transition.startTarget,
+      transition.endTarget,
+      eased
+    );
+
+
+    camera.lookAt(
+      currentTarget
+    );
+
+
+    if (
+      progress >= 1
+    ) {
+      const callback =
+        transition.onComplete;
+
+
+      transition =
+        null;
+
+
+      if (callback) {
+        callback();
+      }
+    }
+  }
+
+
+  /* ========================================================
+     Public API
+     ======================================================== */
+
+  return {
+    focusOnObject,
+
+    returnToOverview,
+
+    update,
+
+
+    getFocusedObject() {
+      return focusedObject;
+    },
+
+
+    getCurrentTarget() {
+      return currentTarget;
+    },
+
+
+    getIsFocused() {
+      return isFocused;
+    },
+
+
+    getIsTransitioning() {
+      return (
+        transition !== null
+      );
+    },
   };
 }
