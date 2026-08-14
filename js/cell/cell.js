@@ -160,6 +160,14 @@ export function buildCell(
     });
 
 
+  /*
+   * Mitochondria is now a THREE.Group.
+   *
+   * The Blender GLB is loaded inside
+   * mitochondria.js and its individual
+   * mitochondria are added to this group
+   * asynchronously.
+   */
   const mitochondria =
     createMitochondria();
 
@@ -302,45 +310,13 @@ export function buildCell(
 
   /* ========================================================
      Mitochondrial layout
+
+     The old mitochondria.forEach() layout is intentionally
+     removed.
+
+     Positions, rotations and scales for the new Blender
+     mitochondria are controlled inside mitochondria.js.
      ======================================================== */
-
-  mitochondria.forEach(
-    (
-      mitochondrion,
-      index
-    ) => {
-      const layout =
-        cellLayout
-          .mitochondria[
-            index
-          ];
-
-
-      if (!layout) {
-        return;
-      }
-
-
-      mitochondrion.position.copy(
-        layout.position
-      );
-
-
-      mitochondrion.rotation.copy(
-        layout.rotation
-      );
-
-
-      mitochondrion.scale.setScalar(
-        layout.scale
-      );
-
-
-      mitochondrion.userData
-        .layoutScale =
-        layout.scale;
-    }
-  );
 
 
   /* ========================================================
@@ -448,7 +424,11 @@ export function buildCell(
 
     ribosomes,
 
-    ...mitochondria,
+    /*
+     * Mitochondria is already one THREE.Group,
+     * so there is NO spread operator here.
+     */
+    mitochondria,
 
     ...lysosomes,
 
@@ -545,9 +525,12 @@ export function buildCell(
       );
 
 
-      mitochondria.animate(
-        elapsedTime
-      );
+      /*
+       * No mitochondria.animate() here yet.
+       *
+       * The new GLB mitochondria group currently
+       * does not expose an animate() method.
+       */
 
 
       golgi.animate(
